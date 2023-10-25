@@ -22,6 +22,8 @@ def get_cleaned_shot_data():
 
     df["TOT_TIME_LEFT"] = df.apply(get_total_time_left, axis=1)
 
+    df["HOME"] = df.apply(lambda row : 1 if row["LOCATION"] == "H" else 0, axis=1)
+
     # Drop columns that aren't important for determining shot difficulty or for hot-hand hypothesis
     df.drop(columns=["MATCHUP", "W", "FINAL_MARGIN", "TOUCH_TIME", "PTS_TYPE", "SHOT_RESULT", "PTS"], inplace=True)
 
@@ -29,6 +31,3 @@ def get_cleaned_shot_data():
     df.rename(columns={"player_name" : "PLAYER_NAME", "player_id" : "PLAYER_ID"}, inplace=True)
 
     return df
-
-df = get_cleaned_shot_data()
-print(df.head())
