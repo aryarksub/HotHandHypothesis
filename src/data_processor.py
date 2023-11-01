@@ -135,5 +135,5 @@ def get_wrong_names():
 #     print(name)
 
 ## Uncomment to see first few rows of cleaned data
-df = get_cleaned_shot_data()
-print(df.head())
+# df = get_cleaned_shot_data()
+# print(df.head())

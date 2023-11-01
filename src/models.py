@@ -5,14 +5,17 @@ from sklearn.linear_model import LogisticRegression
 
 from data_processor import get_cleaned_shot_data
 
-def select_in_features(df, all_in_features, out_features, verbose=False):
+def select_in_features(df, all_in_features, out_features, max_in_features=None, verbose=False):
     best_score = (0, [])
     lr_model = LogisticRegression()
     kfold_cv = KFold(n_splits=10)
 
     out_values = df[out_features].values.ravel()
 
-    for num_features in range(1, len(all_in_features)+1):
+    if max_in_features is None:
+        max_in_features = len(all_in_features)
+
+    for num_features in range(1, max_in_features+1):
         all_in_feature_combinations = combinations(all_in_features, num_features)
         for in_features in all_in_feature_combinations:
             in_features = list(in_features)
