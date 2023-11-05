@@ -34,7 +34,7 @@ def add_exp_reg_column(df, column, intervals, init_params, verbose=False):
         print(f"Model params [a,b,c] for y = a * e^(bx) + c: {params}")
         print(f"R Squared: {r_sq(shot_pct, exp_fit(np.asarray(x_range, dtype=np.float64), a, b, c))}")
 
-    df[f"{column}_EXP"] = exp_fit(df[column], a, b, c)
+    df[f"{column}_EXP"] = exp_fit(df[column].astype(float), a, b, c)
     
     return df
 
@@ -75,5 +75,18 @@ def add_all_regression_columns(df, verbose=False):
 
     df = add_exp_reg_column(df, "CLOSE_DEF_DIST", def_dist_intervals, (0, 0, 0), verbose)
     df = add_poly_reg_column(df, "CLOSE_DEF_DIST", def_dist_intervals, 2, verbose)
+
+    return df
+
+def add_all_regression_binned_columns(df, verbose=False):
+    # Regression based on binned dribbles
+    dribbles_bin_intervals = [(i,i) for i in range(df["DRIBBLES_BIN"].max()+1)]
+    df = add_exp_reg_column(df, "DRIBBLES_BIN", dribbles_bin_intervals, (0, -1, 0), verbose)
+    
+    # Regression based on binned shot distance
+    shot_dist_bin_intervals = [(i,i) for i in range(df["SHOT_DIST_BIN"].max()+1)]
+    df = add_poly_reg_column(df, "SHOT_DIST_BIN", shot_dist_bin_intervals, 3, verbose)
+
+    # There is no good simple regression model for binned closest defender distance data
 
     return df

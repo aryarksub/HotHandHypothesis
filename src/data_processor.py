@@ -1,6 +1,6 @@
 import pandas as pd
 
-from simple_reg import add_all_regression_columns
+from simple_reg import add_all_regression_columns, add_all_regression_binned_columns
 
 name_replacements = {
         "jose juan barea" : "j.j. barea",
@@ -108,6 +108,7 @@ def get_cleaned_shot_data():
     df = add_heights(df)
     df = add_binned_data(df)
     df = add_all_regression_columns(df)
+    df = add_all_regression_binned_columns(df)
 
     return df
 
