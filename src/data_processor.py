@@ -1,5 +1,7 @@
 import pandas as pd
 
+from simple_reg import add_all_regression_columns
+
 name_replacements = {
         "jose juan barea" : "j.j. barea",
         "danilo gallinai" : "danilo gallinari",
@@ -69,7 +71,7 @@ def add_binned_data(df):
 
     bin_data("DRIBBLES_BIN", "DRIBBLES", [0, 1, 3, 6, 100])
     bin_data("SHOT_DIST_BIN", "SHOT_DIST", [0,4,8,12,16,24,32,100])
-    bin_data("DEF_DIST_BIN", "CLOSE_DEF_DIST", [0, 2, 4, 6, 100])
+    bin_data("CLOSE_DEF_DIST_BIN", "CLOSE_DEF_DIST", [0, 2, 4, 6, 100])
     return df
 
 def get_cleaned_shot_data():
@@ -105,6 +107,7 @@ def get_cleaned_shot_data():
     df = fix_names(df)
     df = add_heights(df)
     df = add_binned_data(df)
+    df = add_all_regression_columns(df)
 
     return df
 
@@ -137,3 +140,4 @@ def get_wrong_names():
 ## Uncomment to see first few rows of cleaned data
 # df = get_cleaned_shot_data()
 # print(df.head())
+# print(df.columns)
