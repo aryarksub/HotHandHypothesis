@@ -3,7 +3,7 @@ from itertools import combinations, product
 from sklearn.model_selection import KFold, cross_val_score
 
 from data_processor import get_cleaned_shot_data
-from models import log_model, poly_log_model
+from models import log_model, poly_log_model, xgb_model
 
 def evaluate_model(model, df, in_features, out_features, verbose=False):
     kfold_cv = KFold(n_splits=10)
@@ -48,7 +48,13 @@ if __name__ == '__main__':
     # print(f"Best logistic regression model:\n  Features: {log_reg_features}\n  Accuracy: {log_reg_accuracy}")
 
     # Uncomment for best features for polynomial logistic regression (degree = 2)
-    poly_log_reg_accuracy, poly_log_reg_features = best_features_for_model(
-        poly_log_model(2, interaction_terms_only=True), df, model_name="Poly logistic regression", verbose=True
+    # poly_log_reg_accuracy, poly_log_reg_features = best_features_for_model(
+    #     poly_log_model(2, interaction_terms_only=True), df, model_name="Poly logistic regression", verbose=True
+    # )
+    # print(f"Best polynomial logistic regression model:\n  Features: {poly_log_reg_features}\n  Accuracy: {poly_log_reg_accuracy}")
+
+    # Uncomment for best features for XGBoost
+    xgb_accuracy, xgb_features = best_features_for_model(
+        xgb_model(), df, model_name="XGBoost", verbose=True        
     )
-    print(f"Best polynomial logistic regression model:\n  Features: {poly_log_reg_features}\n  Accuracy: {poly_log_reg_accuracy}")
+    print(f"Best XGBoost model:\n  Features: {xgb_features}\n  Accuracy: {xgb_accuracy}")

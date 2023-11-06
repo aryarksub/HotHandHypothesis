@@ -1,5 +1,6 @@
 from itertools import combinations
 import numpy as np
+import xgboost as xgb
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import KFold, cross_val_score, train_test_split
@@ -54,6 +55,17 @@ def polynomial_logistic_regression(df, in_features, out_features, degree=2, verb
         print(f"Accuracy: {pipeline.score(X_test, y_test)}")
     return pipeline
 
+def xgb_model():
+    return xgb.XGBClassifier(max_depth=3, max_leaves=8, learning_rate=0.1)
+
+def xgboost(df, in_features, out_features, verbose=False):
+    X_train, X_test, y_train, y_test = train_test_split(df[in_features], df[out_features], train_size=0.75)
+    xgb_clf = xgb_model()
+    xgb_clf.fit(X_train, y_train.values.ravel())
+    if verbose:
+        print(f"Accuracy: {xgb_clf.score(X_test, y_test)}")
+    return xgb_clf
+
 if __name__ == "__main__":
     df = get_cleaned_shot_data()
 
@@ -70,3 +82,6 @@ if __name__ == "__main__":
 
     poly_lr_model = polynomial_logistic_regression(df, best_in_features, out_features, verbose=True)
     print(poly_lr_model[1].coef_)
+
+    xgb_model = xgboost(df, best_in_features, out_features, verbose=True)
+    print(xgb_model.feature_importances_)
