@@ -1,9 +1,9 @@
 import numpy as np
 from itertools import combinations, product
 from sklearn.model_selection import KFold, cross_val_score
-from sklearn.linear_model import LogisticRegression
 
 from data_processor import get_cleaned_shot_data
+from models import log_model, poly_log_model
 
 def evaluate_model(model, df, in_features, out_features, verbose=False):
     kfold_cv = KFold(n_splits=10)
@@ -41,7 +41,14 @@ def best_features_for_model(model, df, model_name=None, verbose=False):
 if __name__ == '__main__':
     df = get_cleaned_shot_data()
 
-    log_reg_accuracy, log_reg_features = best_features_for_model(
-        LogisticRegression(max_iter=400), df, model_name="Logistic regression", verbose=True
+    # Uncomment for best features for simple logistic regression
+    # log_reg_accuracy, log_reg_features = best_features_for_model(
+    #     log_model(max_iter=400), df, model_name="Logistic regression", verbose=True
+    # )
+    # print(f"Best logistic regression model:\n  Features: {log_reg_features}\n  Accuracy: {log_reg_accuracy}")
+
+    # Uncomment for best features for polynomial logistic regression (degree = 2)
+    poly_log_reg_accuracy, poly_log_reg_features = best_features_for_model(
+        poly_log_model(2, interaction_terms_only=True), df, model_name="Poly logistic regression", verbose=True
     )
-    print(f"Best logistic regression model:\n  Features: {log_reg_features}\n  Accuracy: {log_reg_accuracy}")
+    print(f"Best polynomial logistic regression model:\n  Features: {poly_log_reg_features}\n  Accuracy: {poly_log_reg_accuracy}")

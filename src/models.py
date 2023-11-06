@@ -28,18 +28,21 @@ def select_in_features(model, df, all_in_features, out_features, max_in_features
             print(f"Done with all combinations of {num_features} input features")
             print(f"Current best: {best_score}")
     return best_score
+
+def log_model(log_reg_solver='lbfgs', max_iter=100):
+    return LogisticRegression(solver=log_reg_solver, max_iter=max_iter)
         
 def logistic_regression(df, in_features, out_features, verbose=False):
     X_train, X_test, y_train, y_test = train_test_split(df[in_features], df[out_features], train_size=0.75)
-    clf_lr = LogisticRegression()
+    clf_lr = log_model(max_iter=400)
     clf_lr.fit(X_train, y_train.values.ravel())
     if verbose:
         print(f"Accuracy: {clf_lr.score(X_test, y_test)}")
     return clf_lr
 
-def poly_log_model(degree):
-    poly_model = PolynomialFeatures(degree=degree, interaction_only=False, include_bias=True)
-    lr_model = LogisticRegression()
+def poly_log_model(degree, log_reg_solver='lbfgs', interaction_terms_only=False):
+    poly_model = PolynomialFeatures(degree=degree, interaction_only=interaction_terms_only, include_bias=True)
+    lr_model = log_model(log_reg_solver=log_reg_solver, max_iter=800)
     return Pipeline([('poly_model', poly_model), ('log_reg_model', lr_model)])
 
 def polynomial_logistic_regression(df, in_features, out_features, degree=2, verbose=False):
