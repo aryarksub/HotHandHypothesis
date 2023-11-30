@@ -62,6 +62,18 @@ def add_heights(df):
     )
     return df
 
+def add_off_def_rtg(df):
+    adv_stats = pd.read_csv("data/advanced_stats.csv")
+    names = [get_cleaned_name(name) for name in adv_stats["Player"]]
+    off_def_rtg = zip(adv_stats["ORtg"], adv_stats["DRtg"])
+    rtg_dict = dict(zip(names, off_def_rtg))
+
+    df["OFF_RTG"] = df.apply(lambda row : rtg_dict[row["PLAYER_NAME"]][0], axis=1)
+    df["DEF_RTG"] = df.apply(lambda row : rtg_dict[row["PLAYER_NAME"]][1], axis=1)
+    df["RTG_DIFF"] = df.apply(lambda row : row["OFF_RTG"] - row["DEF_RTG"], axis=1)
+    return df
+
+
 def add_binned_data(df):
     def bin_data(binned_col, orig_col, bins_arr):
         df[binned_col] = pd.cut(
@@ -114,6 +126,7 @@ def get_cleaned_shot_data():
 
     df = replace_names(df)
     df = add_heights(df)
+    df = add_off_def_rtg(df)
     df = add_binned_data(df)
     df = add_all_regression_columns(df)
     df = add_all_regression_binned_columns(df)
