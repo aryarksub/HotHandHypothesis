@@ -1,55 +1,57 @@
 import pandas as pd
+from unidecode import unidecode
 
 from simple_reg import add_all_regression_columns, add_all_regression_binned_columns
 
 name_replacements = {
-        "jose juan barea" : "j.j. barea",
-        "danilo gallinai" : "danilo gallinari",
-        "jimmer dredette" : "jimmer fredette",
-        "beno urdih" : "beno udrih",
-        "al farouq aminu" : "al-farouq aminu",
-        "dirk nowtizski" : "dirk nowitzki",
-        "otto porter" : "otto porter jr.",
-        "oj mayo" : "o.j. mayo",
-        "james ennis" : "james ennis iii",
-        "nerles noel" : "nerlens noel",
-        "jon ingles" : "joe ingles",
-        "amare stoudemire" : "amar'e stoudemire",
-        "dj augustin" : "d.j. augustin",
-        "nene hilario" : "nene",
-        "dwayne wade" : "dwyane wade",
-        "kyle oquinn" : "kyle o'quinn",
-        "cj watson" : "c.j. watson",
-        "time hardaway jr" : "tim hardaway jr.",
-        "mnta ellis" : "monta ellis",
-        "steve adams" : "steven adams",
-        "alan crabbe" : "allen crabbe",
-        "charles hayes" : "chuck hayes",
-        "johnny o'bryant" : "johnny o'bryant iii",
-        "a.j. price" : "aj price",
-        "toure murry" : "toure' murry",
-        "larry drew" : "larry drew ii",
-        "jeff taylor" : "jeffery taylor",
-        "j.r. smith" : "jr smith",
-        "glenn robinson" : "glenn robinson iii",
-        "glen rice jr." : "glen rice",
-        "perry jones" : "perry jones iii"
-    }
+    "charles hayes" : "chuck hayes",
+    "jon ingles" : "joe ingles",
+    "perry jones iii" : "perry jones",
+    "jose juan barea" : "jj barea",
+    "otto porter" : "otto porter jr",
+    "jimmer dredette" : "jimmer fredette",
+    "glenn robinson" : "glenn robinson iii",
+    "amare stoudemire" : "amar'e stoudemire",
+    "danilo gallinai" : "danilo gallinari",
+    "kyle oquinn" : "kyle o'quinn",
+    "time hardaway jr" : "tim hardaway jr",
+    "nene hilario" : "nene",
+    "james ennis" : "james ennis iii",
+    "mnta ellis" : "monta ellis",
+    "enes kanter" : "enes freedom",
+    "toure murry" : "toure' murry",
+    "dwayne wade" : "dwyane wade",
+    "glen rice" : "glen rice jr",
+    "steve adams" : "steven adams",
+    "al farouq aminu" : "al-farouq aminu",
+    "johnny o'bryant iii" : "johnny o'bryant",
+    "dirk nowtizski" : "dirk nowitzki",
+    "alan crabbe" : "allen crabbe",
+    "jeffery taylor" : "jeff taylor",
+    "beno urdih" : "beno udrih",
+    "nerles noel" : "nerlens noel",
+    "larry drew" : "larry drew ii"
+}
+
+def get_cleaned_name(name):
+    return ''.join(filter(lambda x: x.isalpha() or x in " '-", unidecode(name))).lower()
+
+def replace_names(df):
+    return df.replace(name_replacements)
+
+def get_converted_name(name):
+    # Convert "Last, First" to "first last" (lowercase)
+    tokens = [token.strip().lower() for token in name.split(",")]
+    new_name = " ".join(tokens[::-1])
+    return get_cleaned_name(new_name)
 
 def get_player_to_height_dict():
     all_stats = pd.read_csv("data/all_seasons.csv")
     season_stats = all_stats[all_stats["season"] == "2014-15"]
-    names = [name.lower() for name in season_stats["player_name"].values]
-    height_dict = dict(zip(names, season_stats.player_height))
-    
-    # Manual entry since name is not in dataset
-    # name -> height in cm
-    height_dict["atila dos santos"] = 208.28 # 6'10"
-    
+    names = [get_cleaned_name(name) for name in season_stats["player_name"].values]
+    replaced_names = [name_replacements.get(name, name) for name in names]
+    height_dict = dict(zip(replaced_names, season_stats.player_height))
     return height_dict
-
-def fix_names(df):
-    return df.replace(name_replacements)
 
 def add_heights(df):
     heights = get_player_to_height_dict()
@@ -104,7 +106,13 @@ def get_cleaned_shot_data():
     # Rename columns so all have capitalized names
     df.rename(columns={"player_name" : "PLAYER_NAME", "player_id" : "PLAYER_ID"}, inplace=True)
 
-    df = fix_names(df)
+    # Atila dos Santos does not have relevant data in other datasets, so we remove corresponding rows from analysis dataframe
+    df = df[(df["PLAYER_NAME"] != "atila dos santos") & (df["CLOSEST_DEFENDER"] != "Dos Santos, Atila")]
+
+    df["PLAYER_NAME"] = df["PLAYER_NAME"].apply(get_cleaned_name)
+    df["CLOSEST_DEFENDER"] = df["CLOSEST_DEFENDER"].apply(get_converted_name)
+
+    df = replace_names(df)
     df = add_heights(df)
     df = add_binned_data(df)
     df = add_all_regression_columns(df)
@@ -112,33 +120,6 @@ def get_cleaned_shot_data():
 
     return df
 
-def get_converted_name(name):
-    # Convert "Last, First" to "first last" (lowercase)
-    tokens = [token.strip().lower() for token in name.split(",")]
-    new_name = " ".join(tokens[::-1])
-    return name_replacements.get(new_name, new_name)
-
-def get_wrong_names():
+if __name__ == '__main__':
     df = get_cleaned_shot_data()
-    all_seasons_stats = pd.read_csv("data/all_seasons.csv")
-    season_2014_stats = all_seasons_stats[all_seasons_stats["season"] == "2014-15"]
-
-    player_names = {name.lower() for name in season_2014_stats["player_name"].values}
-    wrong_names = set()
-    for name in df["PLAYER_NAME"].values:
-        if name not in player_names and name not in wrong_names:
-            wrong_names.add(name)
-    for name in df["CLOSEST_DEFENDER"].values:
-        converted_name = get_converted_name(name)
-        if converted_name not in player_names and converted_name not in wrong_names:
-            wrong_names.add(converted_name)
-    return wrong_names
-
-## Uncomment to see set of wrong names
-# for name in get_wrong_names():
-#     print(name)
-
-## Uncomment to see first few rows of cleaned data
-# df = get_cleaned_shot_data()
-# print(df.head())
-# print(df.columns)
+    print(df.head())
