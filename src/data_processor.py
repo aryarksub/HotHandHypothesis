@@ -1,5 +1,6 @@
 import pandas as pd
 from unidecode import unidecode
+from xgboost import XGBClassifier
 
 from simple_reg import add_all_regression_columns, add_all_regression_binned_columns
 
@@ -73,7 +74,6 @@ def add_off_def_rtg(df):
     df["RTG_DIFF"] = df.apply(lambda row : row["OFF_RTG"] - row["DEF_RTG"], axis=1)
     return df
 
-
 def add_binned_data(df):
     def bin_data(binned_col, orig_col, bins_arr):
         df[binned_col] = pd.cut(
@@ -88,7 +88,20 @@ def add_binned_data(df):
     bin_data("CLOSE_DEF_DIST_BIN", "CLOSE_DEF_DIST", [0, 2, 4, 6, 100])
     return df
 
-def get_cleaned_shot_data():
+def add_shot_difficulty(df):
+    def construct_optimal_xgb_model(df, in_features, out_features):
+        extra_params = {'n_estimators': 104, 'reg_alpha': 0.5121225370235516, 'reg_lambda': 1.8195910691785828, 'subsample': 0.7}
+        opt_model = XGBClassifier(max_depth=3, max_leaves=10, learning_rate=0.14503807928342588, **extra_params)
+        fit_model = opt_model.fit(df[in_features], df[out_features])
+        return fit_model
+    
+    in_features = ['DRIBBLES_POLY', 'SHOT_DIST', 'CLOSE_DEF_DIST_EXP', 'HEIGHT_DIFF', 'PERIOD', 'SHOT_CLOCK', 'HOME']
+    out_features = ['FGM']
+    difficulty_model = construct_optimal_xgb_model(df, in_features, out_features)
+    df["SHOT_DIFFICULTY"] = difficulty_model.predict_proba(df[in_features])[:,0]
+    return df
+
+def get_cleaned_shot_data(csv_name=None):
     def time_to_seconds(time_str):
         mins, secs = time_str.split(":")
         return 60*int(mins) + int(secs)
@@ -130,9 +143,13 @@ def get_cleaned_shot_data():
     df = add_binned_data(df)
     df = add_all_regression_columns(df)
     df = add_all_regression_binned_columns(df)
+    df = add_shot_difficulty(df)
+
+    if csv_name:
+        df.to_csv(csv_name)
 
     return df
 
 if __name__ == '__main__':
-    df = get_cleaned_shot_data()
+    df = get_cleaned_shot_data("data/cleaned_dataset.csv")
     print(df.head())

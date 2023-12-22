@@ -55,8 +55,8 @@ def polynomial_logistic_regression(df, in_features, out_features, degree=2, verb
         print(f"Accuracy: {pipeline.score(X_test, y_test)}")
     return pipeline
 
-def xgb_model():
-    return xgb.XGBClassifier(max_depth=3, max_leaves=8, learning_rate=0.1)
+def xgb_model(max_depth=3, max_leaves=8, learning_rate=0.1, **kwargs):
+    return xgb.XGBClassifier(max_depth=max_depth, max_leaves=max_leaves, learning_rate=learning_rate, **kwargs)
 
 def xgboost(df, in_features, out_features, verbose=False):
     X_train, X_test, y_train, y_test = train_test_split(df[in_features], df[out_features], train_size=0.75)
