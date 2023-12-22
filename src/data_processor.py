@@ -146,7 +146,7 @@ def get_cleaned_shot_data(csv_name=None):
     df = add_shot_difficulty(df)
 
     if csv_name:
-        df.to_csv(csv_name)
+        df.to_csv(csv_name, index=False)
 
     return df
 
