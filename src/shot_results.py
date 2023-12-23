@@ -26,5 +26,5 @@ def add_previous_shot_results(df, num_shots=5):
 if __name__ == '__main__':
     df = pd.read_csv("data\cleaned_dataset.csv")
     df = df[["GAME_ID", "PLAYER_NAME", "SHOT_NUMBER", "FGM", "SHOT_DIFFICULTY"]]
-    df = add_previous_shot_results(df)
+    df = add_previous_shot_results(df, num_shots=10)
     df.to_csv("data\shot_result_dataset.csv", index=False)
