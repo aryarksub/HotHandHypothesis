@@ -2,18 +2,25 @@ import matplotlib.pyplot as plt
 import os
 import pandas as pd
 
-def make_scatter_plot(x, y_data, xlabel=None, ylabel=None, plot_labels=None, title=None, dir_name=None, file_name=None):
+def make_scatter_plot(x, y_data, remove_x_ticks=False, xlabel=None, ylabel=None, plot_labels=None, title=None, dir_name=None, file_name=None):
     if dir_name:
         os.makedirs(dir_name, exist_ok=True)
 
     for i in range(len(y_data)):
         plt.scatter(x, y_data[i], label=(plot_labels[i] if plot_labels else None))
-    plt.xticks(x)
+    
+    if remove_x_ticks:
+        plt.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
+    else:
+        plt.xticks(x)
+    
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.title(title)
+    
     if plot_labels:
         plt.legend(loc='best')
+    
     plt.savefig(f"{dir_name}\{file_name}")
     plt.clf()
 
@@ -43,7 +50,9 @@ def get_prob_make_given_num_shots_made(df, num_prev_shots, min_num_shots_made, m
     return df_sub["FGM"].sum() / len(df_sub)
 
 def get_prob_make_given_result_sequence(df, num_prev_shots, sequence):
-    df_sub = df.loc[df[f"PREV-{num_prev_shots}"] == sequence]
+    # Prepend "X" to stay consistent with data format in shot_result_dataset.csv
+    mod_sequence = "X" + sequence
+    df_sub = df.loc[df[f"PREV-{num_prev_shots}"] == mod_sequence]
     return df_sub["FGM"].sum() / len(df_sub)
 
 def hhh_prob_for_fixed_num_prev_shots_made(df, max_shot_memory, verbose=False, plot=False):
@@ -105,6 +114,38 @@ def hhh_prob_for_made_shot_streak(df, max_shot_memory, verbose=False, plot=False
 
     return probs_n_straight, probs_one_miss
 
+def hhh_prob_for_fixed_length_shot_sequences(df, max_shot_memory, verbose=False, plot=False):
+    probabilities = []
+
+    # Probability of making a shot given every shot sequence of length n (1 <= n <= 10)
+    for n in range(1, max_shot_memory+1):
+        shot_sequences = generate_shot_sequences(n)
+        prob_length_n = []
+        
+        for sequence in shot_sequences:
+            prob_make_given_sequence = get_prob_make_given_result_sequence(df, n, sequence)
+            prob_length_n.append(prob_make_given_sequence)
+
+            if verbose:
+                print(f"Prob make given previous shot result {sequence}:", round(prob_make_given_sequence, 4))
+
+        if plot:
+            make_scatter_plot(
+                range(2**n),
+                [prob_length_n],
+                remove_x_ticks=True,
+                xlabel="Ordered shot sequences",
+                ylabel="Probability",
+                title=f"P(Make shot n+1 | Shot result sequence of length n): n={n}",
+                dir_name="plots\hhh_result_seq",
+                file_name=f"prob_make_given_length_{n}_sequence.png"
+            )
+        
+        probabilities.append(prob_length_n)
+    
+    return probabilities
+    
+
 if __name__ == '__main__':
     df = pd.read_csv("data\shot_result_dataset.csv")
     max_shot_memory = 10
@@ -112,3 +153,5 @@ if __name__ == '__main__':
     probabilities_hhh_k_of_n = hhh_prob_for_fixed_num_prev_shots_made(df, max_shot_memory, plot=True)
 
     probabilities_hhh_n_straight, probabilities_hhh_one_prev_miss = hhh_prob_for_made_shot_streak(df, max_shot_memory, plot=True)
+
+    probabilities_hhh_length_n_sequence = hhh_prob_for_fixed_length_shot_sequences(df, max_shot_memory, plot=True)
