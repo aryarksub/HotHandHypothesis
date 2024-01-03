@@ -17,6 +17,27 @@ def make_scatter_plot(x, y_data, xlabel=None, ylabel=None, plot_labels=None, tit
     plt.savefig(f"{dir_name}\{file_name}")
     plt.clf()
 
+def generate_shot_sequences(N):
+    # Generate all possible shot sequences of length N: (s_1, s_2, ..., s_N)
+    # These represent the immediately previous shot, 2nd prev shot, etc.
+    # Output is ordered as follows:
+    #   1. Number of shots made (e.g. 000 comes before 001, 010, 100)
+    #   2. Most recent shot made (e.g. 0011 < 0101 < 0110 < 1001)
+    # Sequence defined formally here: https://oeis.org/A294648
+
+    def to_padded_binary(val):
+        return bin(val)[2:].zfill(N)
+
+    dp = [[[] for _ in range(N+1)] for _ in range(N+1)]
+    for n in range(N+1):
+        dp[n][0] = [0]
+        dp[n][n] = [2**n - 1]
+    for n in range(N+1):
+        for k in range(1, n):
+            dp[n][k] = dp[n-1][k] + [2**(n-1) + x for x in dp[n-1][k-1]]
+
+    return [to_padded_binary(sequence) for k in range(N+1) for sequence in dp[N][k]]
+
 def get_prob_make_given_num_shots_made(df, num_prev_shots, min_num_shots_made, max_num_shots_made):
     df_sub = df.loc[df[f"TOT_FGM-{num_prev_shots}"].between(min_num_shots_made, max_num_shots_made, inclusive='both')]
     return df_sub["FGM"].sum() / len(df_sub)
