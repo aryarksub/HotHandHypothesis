@@ -13,7 +13,7 @@ def add_previous_shot_results(df, num_shots=5):
         # E.g. "01101" means that shot n-1 missed, n-2 made, n-3 made, n-4 missed, n-5 made
         def concatenate_results(row):
             if row["SHOT_NUMBER"] >= shot+1:
-                return "".join(str(row[f"FGM-{i}"]) for i in range(1, shot+1))
+                return "X" + "".join(str(row[f"FGM-{i}"]) for i in range(1, shot+1))
             else:
                 return None
 
