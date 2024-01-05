@@ -45,8 +45,15 @@ def generate_shot_sequences(N):
 
     return [to_padded_binary(sequence) for k in range(N+1) for sequence in dp[N][k]]
 
-def get_prob_make_given_num_shots_made(df, num_prev_shots, min_num_shots_made, max_num_shots_made):
-    df_sub = df.loc[df[f"TOT_FGM-{num_prev_shots}"].between(min_num_shots_made, max_num_shots_made, inclusive='both')]
+def get_prob_make_given_num_shots_made(df, num_prev_shots, min_num_shots_made, max_num_shots_made, diff_adj=""):
+    # If diff_adj != "", get sub-dataframe based on shots with difficulty above/below prev shot avg difficulty
+    if diff_adj == "greater":
+        df_diff_adj = df.loc[df["SHOT_DIFFICULTY"] >= df[f"D_AVG-{num_prev_shots}"]]
+    elif diff_adj == "lower":
+        df_diff_adj = df.loc[df["SHOT_DIFFICULTY"] < df[f"D_AVG-{num_prev_shots}"]]
+    else:
+        df_diff_adj = df
+    df_sub = df_diff_adj.loc[df_diff_adj[f"TOT_FGM-{num_prev_shots}"].between(min_num_shots_made, max_num_shots_made, inclusive='both')]
     return df_sub["FGM"].sum() / len(df_sub)
 
 def get_prob_make_given_result_sequence(df, num_prev_shots, sequence):
@@ -55,7 +62,11 @@ def get_prob_make_given_result_sequence(df, num_prev_shots, sequence):
     df_sub = df.loc[df[f"PREV-{num_prev_shots}"] == mod_sequence]
     return df_sub["FGM"].sum() / len(df_sub)
 
-def hhh_prob_for_fixed_num_prev_shots_made(df, max_shot_memory, verbose=False, plot=False):
+def hhh_prob_for_fixed_num_prev_shots_made(df, max_shot_memory, diff_adj="", verbose=False, plot=False):
+    # Set description to indicate whether prob is calculated using shots above/below prev shot avg difficulty
+    diff_description = (f" & D {'>=' if diff_adj == 'greater' else '<'} D_avg") if diff_adj else ""
+    plot_file_name_suffix = (f"_d_{'gt' if diff_adj == 'greater' else 'lt'}_d_avg") if diff_adj else ""
+
     probabilities = []
     
     # Probability of making a shot given k makes in last n shots (1 <= n <= 10, 0 <= k <= n)
@@ -63,11 +74,14 @@ def hhh_prob_for_fixed_num_prev_shots_made(df, max_shot_memory, verbose=False, p
         prob_for_n_shots = []
         
         for k in range(n+1):
-            prob_make_with_k_makes_in_last_n_shots = get_prob_make_given_num_shots_made(df, n, k, k)
+            prob_make_with_k_makes_in_last_n_shots = get_prob_make_given_num_shots_made(df, n, k, k, diff_adj=diff_adj)
             prob_for_n_shots.append(prob_make_with_k_makes_in_last_n_shots)
             
             if verbose:
-                print(f"Prob make given {k} makes in last {n} shots:", round(prob_make_with_k_makes_in_last_n_shots, 4))
+                print(
+                    f"Prob make given {k} makes in last {n} shots{diff_description}:", 
+                    round(prob_make_with_k_makes_in_last_n_shots, 4)
+                )
 
         if plot:
             make_scatter_plot(
@@ -75,9 +89,9 @@ def hhh_prob_for_fixed_num_prev_shots_made(df, max_shot_memory, verbose=False, p
                 [prob_for_n_shots], 
                 xlabel="k", 
                 ylabel="Probability", 
-                title=f"P(Make shot n+1 | Make k out of n previous shots): n={n}",
-                dir_name="plots\hhh_k_of_n", 
-                file_name=f"prob_make_given_k_out_of_{n}_shots.png"
+                title=f"P(Make shot n+1 | Make k out of n previous shots{diff_description}): n={n}",
+                dir_name=f"plots\{'da' if diff_adj else ''}hhh_k_of_n", 
+                file_name=f"prob_make_given_k_out_of_{n}_shots{plot_file_name_suffix}.png"
             )
         
         probabilities.append(prob_for_n_shots)
@@ -169,3 +183,7 @@ if __name__ == '__main__':
     probabilities_hhh_n_straight, probabilities_hhh_one_prev_miss = hhh_prob_for_made_shot_streak(df, max_shot_memory, plot=True)
 
     probabilities_hhh_length_n_sequence = hhh_prob_for_fixed_length_shot_sequences(df, max_shot_memory, plot=True)
+
+    probabilities_dahhh_k_of_n_d_gt_d_avg = hhh_prob_for_fixed_num_prev_shots_made(df, max_shot_memory, diff_adj="greater", plot=True)
+
+    probabilities_dahhh_k_of_n_d_lt_d_avg = hhh_prob_for_fixed_num_prev_shots_made(df, max_shot_memory, diff_adj="less", verbose=True, plot=True)
