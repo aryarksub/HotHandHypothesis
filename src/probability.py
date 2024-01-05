@@ -130,15 +130,29 @@ def hhh_prob_for_fixed_length_shot_sequences(df, max_shot_memory, verbose=False,
                 print(f"Prob make given previous shot result {sequence}:", round(prob_make_given_sequence, 4))
 
         if plot:
+            for k in range(n+1):
+                sequences_with_k_makes_indices = [i for i in range(len(shot_sequences)) if shot_sequences[i].count("1") == k]
+                probs_for_length_n_seqs_k_makes = [prob_length_n[i] for i in sequences_with_k_makes_indices]
+                make_scatter_plot(
+                    range(len(sequences_with_k_makes_indices)),
+                    [probs_for_length_n_seqs_k_makes],
+                    remove_x_ticks=True,
+                    xlabel="Ordered shot sequences",
+                    ylabel="Probability",
+                    title=f"P(Make shot n+1 | Shot sequence of length n, k makes): n={n}, k={k}",
+                    dir_name=f"plots\hhh_result_seq\length{n}",
+                    file_name=f"prob_make_given_length_{n}_sequence_with_{k}_makes.png"
+                )
+
             make_scatter_plot(
                 range(2**n),
                 [prob_length_n],
                 remove_x_ticks=True,
                 xlabel="Ordered shot sequences",
                 ylabel="Probability",
-                title=f"P(Make shot n+1 | Shot result sequence of length n): n={n}",
-                dir_name="plots\hhh_result_seq",
-                file_name=f"prob_make_given_length_{n}_sequence.png"
+                title=f"P(Make shot n+1 | Shot sequence of length n): n={n}",
+                dir_name=f"plots\hhh_result_seq\length{n}",
+                file_name=f"prob_make_given_length_{n}_sequence_overall.png"
             )
         
         probabilities.append(prob_length_n)
