@@ -63,9 +63,10 @@ def get_prob_make_given_result_sequence(df, num_prev_shots, sequence):
     return df_sub["FGM"].sum() / len(df_sub)
 
 def hhh_prob_for_fixed_num_prev_shots_made(df, max_shot_memory, diff_adj="", verbose=False, plot=False):
-    # Set description to indicate whether prob is calculated using shots above/below prev shot avg difficulty
+    # Set description/plot names to indicate whether prob is calculated using shots above/below prev shot avg difficulty
     diff_description = (f" & D {'>=' if diff_adj == 'greater' else '<'} D_avg") if diff_adj else ""
-    plot_file_name_suffix = (f"_d_{'gt' if diff_adj == 'greater' else 'lt'}_d_avg") if diff_adj else ""
+    plot_dir_name = (f"plots\dahhh_k_of_n\{'gt' if diff_adj == 'greater' else 'lt'}") if diff_adj else "plots\hhh_k_of_n"  
+    plot_file_name_suffix = (f"_d_{'gt' if diff_adj == 'greater' else 'lt'}") if diff_adj else ""
 
     probabilities = []
     
@@ -90,7 +91,7 @@ def hhh_prob_for_fixed_num_prev_shots_made(df, max_shot_memory, diff_adj="", ver
                 xlabel="k", 
                 ylabel="Probability", 
                 title=f"P(Make shot n+1 | Make k out of n previous shots{diff_description}): n={n}",
-                dir_name=f"plots\{'da' if diff_adj else ''}hhh_k_of_n", 
+                dir_name=plot_dir_name,
                 file_name=f"prob_make_given_k_out_of_{n}_shots{plot_file_name_suffix}.png"
             )
         
@@ -186,4 +187,17 @@ if __name__ == '__main__':
 
     probabilities_dahhh_k_of_n_d_gt_d_avg = hhh_prob_for_fixed_num_prev_shots_made(df, max_shot_memory, diff_adj="greater", plot=True)
 
-    probabilities_dahhh_k_of_n_d_lt_d_avg = hhh_prob_for_fixed_num_prev_shots_made(df, max_shot_memory, diff_adj="less", verbose=True, plot=True)
+    probabilities_dahhh_k_of_n_d_lt_d_avg = hhh_prob_for_fixed_num_prev_shots_made(df, max_shot_memory, diff_adj="less", plot=True)
+
+    for n in range(1, max_shot_memory+1):
+        probs_gt, probs_lt = probabilities_dahhh_k_of_n_d_gt_d_avg[n-1], probabilities_dahhh_k_of_n_d_lt_d_avg[n-1]
+        make_scatter_plot(
+            range(n+1),
+            [probs_gt, probs_lt],
+            xlabel="k",
+            ylabel="Probability",
+            plot_labels=["D >= D_AVG", "D < D_AVG"],
+            title=f"P(Make shot n+1 | Make k out of n previous shots AND diff adj): n={n}",
+            dir_name=f"plots\dahhh_k_of_n\comparison", 
+            file_name=f"prob_make_given_k_out_of_{n}_shots_diff_adj.png"
+        )
