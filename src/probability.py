@@ -99,21 +99,32 @@ def hhh_prob_for_fixed_num_prev_shots_made(df, max_shot_memory, diff_adj="", ver
     
     return probabilities
 
-def hhh_prob_for_made_shot_streak(df, max_shot_memory, verbose=False, plot=False):
+def hhh_prob_for_made_shot_streak(df, max_shot_memory, diff_adj="", verbose=False, plot=False):
+    # Set description/plot names to indicate whether prob is calculated using shots above/below prev shot avg difficulty
+    diff_description = (f" & D {'>=' if diff_adj == 'greater' else '<'} D_avg") if diff_adj else ""
+    plot_dir_name = f"plots\{'da' if diff_adj else ''}hhh_n_straight"
+    plot_file_name_suffix = (f"_d_{'gt' if diff_adj == 'greater' else 'lt'}") if diff_adj else ""
+    
     probs_n_straight = []
     probs_one_miss = []
 
     for n in range(1, max_shot_memory+1):
         # Probability of making a shot given n makes in last n shots (1 <= n <= 10)
-        prob_make_with_n_cons_prev_makes = get_prob_make_given_num_shots_made(df, n, n, n)
+        prob_make_with_n_cons_prev_makes = get_prob_make_given_num_shots_made(df, n, n, n, diff_adj=diff_adj)
         # Probability of making a shot given at least 1 miss in last n shots (1 <= n <= 10)
-        prob_make_with_at_least_one_prev_miss = get_prob_make_given_num_shots_made(df, n, 0, n-1)
+        prob_make_with_at_least_one_prev_miss = get_prob_make_given_num_shots_made(df, n, 0, n-1, diff_adj=diff_adj)
         probs_n_straight.append(prob_make_with_n_cons_prev_makes)
         probs_one_miss.append(prob_make_with_at_least_one_prev_miss)
 
         if verbose:
-            print(f"Prob make given consecutive previous {n} makes:", round(prob_make_with_n_cons_prev_makes, 4))
-            print(f"Prob make given at least one miss in previous {n} shots:", round(prob_make_with_at_least_one_prev_miss, 4))
+            print(
+                f"Prob make given consecutive previous {n} makes{diff_description}:", 
+                round(prob_make_with_n_cons_prev_makes, 4)
+            )
+            print(
+                f"Prob make given at least one miss in previous {n} shots{diff_description}:", 
+                round(prob_make_with_at_least_one_prev_miss, 4)
+            )
     
     if plot:
         make_scatter_plot(
@@ -122,9 +133,9 @@ def hhh_prob_for_made_shot_streak(df, max_shot_memory, verbose=False, plot=False
             xlabel="n", 
             ylabel="Probability",
             plot_labels=["n straight makes", "1+ misses"],
-            title="P(Make shot n+1 | Make all previous n shots)",
-            dir_name="plots\hhh_n_straight", 
-            file_name="prob_make_given_n_straight.png" 
+            title=f"P(Make shot n+1 | Make all previous n shots{diff_description})",
+            dir_name=plot_dir_name, 
+            file_name=f"prob_make_given_n_straight{plot_file_name_suffix}.png" 
         )
 
     return probs_n_straight, probs_one_miss
@@ -201,3 +212,21 @@ if __name__ == '__main__':
             dir_name=f"plots\dahhh_k_of_n\comparison", 
             file_name=f"prob_make_given_k_out_of_{n}_shots_diff_adj.png"
         )
+
+    probabilities_dahhh_n_straight_d_gt, probabilities_dahhh_one_prev_miss_d_gt = hhh_prob_for_made_shot_streak(df, max_shot_memory, diff_adj="greater", verbose=True, plot=True)
+
+    probabilities_dahhh_n_straight_d_lt, probabilities_dahhh_one_prev_miss_d_lt = hhh_prob_for_made_shot_streak(df, max_shot_memory, diff_adj="less", verbose=True, plot=True)
+
+    make_scatter_plot(
+        range(1, max_shot_memory+1),
+        [
+            probabilities_dahhh_n_straight_d_gt, probabilities_dahhh_n_straight_d_lt,
+            probabilities_dahhh_one_prev_miss_d_gt, probabilities_dahhh_one_prev_miss_d_lt
+        ],
+        xlabel="n",
+        ylabel="Probability",
+        plot_labels=["n straight D >= D_AVG", "n straight D < D_AVG", "1+ misses D >= D_AVG", "1+ misses D < D_AVG"],
+        title="P(Make shot n+1 | Make all previous n shots AND diff adj)",
+        dir_name="plots\dahhh_n_straight",
+        file_name="prob_make_given_n_straight_diff_adj.png"
+    )
