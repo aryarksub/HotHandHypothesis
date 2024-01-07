@@ -1,18 +1,27 @@
 import matplotlib.pyplot as plt
+import numpy as np
 import os
 import pandas as pd
 
-def make_scatter_plot(x, y_data, remove_x_ticks=False, xlabel=None, ylabel=None, plot_labels=None, title=None, dir_name=None, file_name=None):
+from models import logistic_regression, xgboost
+
+def make_scatter_plot(x, y_data, line_graph=False, remove_x_ticks=False, xlabel=None, ylabel=None, plot_labels=None, title=None, dir_name=None, file_name=None):
     if dir_name:
         os.makedirs(dir_name, exist_ok=True)
 
     for i in range(len(y_data)):
-        plt.scatter(x, y_data[i], label=(plot_labels[i] if plot_labels else None))
+        if line_graph:
+            plt.plot(x, y_data[i], label=(plot_labels[i] if plot_labels else None))
+        else:
+            plt.scatter(x, y_data[i], label=(plot_labels[i] if plot_labels else None))
     
     if remove_x_ticks:
         plt.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
     else:
-        plt.xticks(x)
+        # use 10 evenly spaced ticks in the plot if there are many data points
+        indices = np.round(np.linspace(0, len(x) - 1, 10)).astype(int)
+        tick_locs = np.round(x[indices], 2) if len(x) > 20 else np.round(x, 2)
+        plt.xticks(ticks=tick_locs, labels=tick_locs)
     
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
@@ -184,7 +193,36 @@ def hhh_prob_for_fixed_length_shot_sequences(df, max_shot_memory, verbose=False,
         probabilities.append(prob_length_n)
     
     return probabilities
-    
+
+def dahhh_prob_given_diff_adj_shot_metrics(df, metric, max_shot_memory, verbose=False, plot=False):
+    probabilities = []
+
+    # metric = "DSS" or "DPTS"
+    for n in range(1, max_shot_memory+1):
+        in_features = [f"{metric}-{n}"]
+        df_sub = df.dropna(subset=in_features)
+
+        # TODO: Include multiple models and determine which has best accuracy. Use that model to predict probabilities
+        xgb_clf = xgboost(df_sub, in_features, out_features=["FGM"], verbose=verbose)
+        
+        max_metric_value = (1 if metric == "DSS" else 3) * n + 0.01 # add extra 0.01 so we can include rightmost endpoint
+        metric_values = np.arange(0, max_metric_value, 0.1).reshape(-1, 1)
+        prob_make_given_dss = xgb_clf.predict_proba(metric_values)[:, 1]
+        probabilities.append(list(zip(metric_values, prob_make_given_dss)))
+
+        if plot:
+            make_scatter_plot(
+                np.squeeze(metric_values),
+                [prob_make_given_dss],
+                line_graph=True,
+                xlabel=metric,
+                ylabel="Probability",
+                title=f"P(Make shot n+1 | {metric} of prev n shots): n = {n}",
+                dir_name=f"plots\dahhh_{metric}",
+                file_name=f"prob_make_given_{metric}_of_prev_{n}_shots.png"
+            )
+
+    return probabilities
 
 if __name__ == '__main__':
     df = pd.read_csv("data\shot_result_dataset.csv")
@@ -213,9 +251,9 @@ if __name__ == '__main__':
             file_name=f"prob_make_given_k_out_of_{n}_shots_diff_adj.png"
         )
 
-    probabilities_dahhh_n_straight_d_gt, probabilities_dahhh_one_prev_miss_d_gt = hhh_prob_for_made_shot_streak(df, max_shot_memory, diff_adj="greater", verbose=True, plot=True)
+    probabilities_dahhh_n_straight_d_gt, probabilities_dahhh_one_prev_miss_d_gt = hhh_prob_for_made_shot_streak(df, max_shot_memory, diff_adj="greater", plot=True)
 
-    probabilities_dahhh_n_straight_d_lt, probabilities_dahhh_one_prev_miss_d_lt = hhh_prob_for_made_shot_streak(df, max_shot_memory, diff_adj="less", verbose=True, plot=True)
+    probabilities_dahhh_n_straight_d_lt, probabilities_dahhh_one_prev_miss_d_lt = hhh_prob_for_made_shot_streak(df, max_shot_memory, diff_adj="less", plot=True)
 
     make_scatter_plot(
         range(1, max_shot_memory+1),
@@ -230,3 +268,5 @@ if __name__ == '__main__':
         dir_name="plots\dahhh_n_straight",
         file_name="prob_make_given_n_straight_diff_adj.png"
     )
+
+    probabilities_dahhh_dss = dahhh_prob_given_diff_adj_shot_metrics(df, "DSS", max_shot_memory, plot=True)
