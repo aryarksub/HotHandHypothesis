@@ -270,3 +270,5 @@ if __name__ == '__main__':
     )
 
     probabilities_dahhh_dss = dahhh_prob_given_diff_adj_shot_metrics(df, "DSS", max_shot_memory, plot=True)
+
+    probabilities_dahhh_dpts = dahhh_prob_given_diff_adj_shot_metrics(df, "DPTS", max_shot_memory, plot=True)
