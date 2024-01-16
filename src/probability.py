@@ -194,7 +194,7 @@ def hhh_prob_for_fixed_length_shot_sequences(df, max_shot_memory, verbose=False,
     
     return probabilities
 
-def dahhh_prob_given_diff_adj_shot_metrics(df, metric, max_shot_memory, verbose=False, plot=False):
+def dahhh_prob_given_diff_adj_shot_metrics(df, metric, max_shot_memory, verbose=False, plot=False, plot_with_line=True):
     probabilities = []
 
     # metric = "DSS" or "DPTS"
@@ -214,12 +214,12 @@ def dahhh_prob_given_diff_adj_shot_metrics(df, metric, max_shot_memory, verbose=
             make_scatter_plot(
                 np.squeeze(metric_values),
                 [prob_make_given_dss],
-                line_graph=True,
+                line_graph=plot_with_line,
                 xlabel=metric,
                 ylabel="Probability",
                 title=f"P(Make shot n+1 | {metric} of prev n shots): n = {n}",
                 dir_name=f"plots\dahhh_{metric}",
-                file_name=f"prob_make_given_{metric}_of_prev_{n}_shots.png"
+                file_name=f"prob_make_given_{metric}_of_prev_{n}_shots{'_line' if plot_with_line else ''}.png"
             )
 
     return probabilities
@@ -269,6 +269,6 @@ if __name__ == '__main__':
         file_name="prob_make_given_n_straight_diff_adj.png"
     )
 
-    probabilities_dahhh_dss = dahhh_prob_given_diff_adj_shot_metrics(df, "DSS", max_shot_memory, plot=True)
+    probabilities_dahhh_dss = dahhh_prob_given_diff_adj_shot_metrics(df, "DSS", max_shot_memory, plot=True, plot_with_line=False)
 
-    probabilities_dahhh_dpts = dahhh_prob_given_diff_adj_shot_metrics(df, "DPTS", max_shot_memory, plot=True)
+    probabilities_dahhh_dpts = dahhh_prob_given_diff_adj_shot_metrics(df, "DPTS", max_shot_memory, plot=True, plot_with_line=False)
