@@ -29,11 +29,14 @@ def add_previous_shot_difficulty_metrics(df, num_shots=5):
         # Difficulty-weighted shot success of last i shots (1 <= i <= num_shots): sum_{j = 1 to i} (s_{n-j} * d_{n-j})
         df[f"DSS-{shot}"] = np.where(df["SHOT_NUMBER"] >= shot+1, sum(df["SHOT_DIFFICULTY"].shift(i) * df["FGM"].shift(i) for i in range(1, shot+1)), None)
 
+        # Difficulty-weighted points made of last i shots (1 <= i <= num_shots): sum_{j = 1 to j} (d_{n-j} * p_{n-j} * s_{n-j})
+        df[f"DPTS-{shot}"] = np.where(df["SHOT_NUMBER"] >= shot+1, sum(df["SHOT_DIFFICULTY"].shift(i) * df["PTS_TYPE"].shift(i) * df["FGM"].shift(i) for i in range(1, shot+1)), None)
+
     return df
 
 if __name__ == '__main__':
     df = pd.read_csv("data\cleaned_dataset.csv")
-    df = df[["GAME_ID", "PLAYER_NAME", "SHOT_NUMBER", "FGM", "SHOT_DIFFICULTY"]]
+    df = df[["GAME_ID", "PLAYER_NAME", "SHOT_NUMBER", "PTS_TYPE", "FGM", "SHOT_DIFFICULTY"]]
     df = add_previous_shot_results(df, num_shots=10)
     df = add_previous_shot_difficulty_metrics(df, num_shots=10)
     df.to_csv("data\shot_result_dataset.csv", index=False)

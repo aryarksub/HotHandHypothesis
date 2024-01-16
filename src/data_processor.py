@@ -126,7 +126,7 @@ def get_cleaned_shot_data(csv_name=None):
     df["HOME"] = df.apply(lambda row : 1 if row["LOCATION"] == "H" else 0, axis=1)
 
     # Drop columns that aren't important for determining shot difficulty or for hot-hand hypothesis
-    df.drop(columns=["MATCHUP", "W", "FINAL_MARGIN", "TOUCH_TIME", "PTS_TYPE", "SHOT_RESULT", "PTS"], inplace=True)
+    df.drop(columns=["MATCHUP", "W", "FINAL_MARGIN", "TOUCH_TIME", "SHOT_RESULT", "PTS"], inplace=True)
 
     # Rename columns so all have capitalized names
     df.rename(columns={"player_name" : "PLAYER_NAME", "player_id" : "PLAYER_ID"}, inplace=True)
