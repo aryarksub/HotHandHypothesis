@@ -1,7 +1,9 @@
 import matplotlib.pyplot as plt
+import math
 import numpy as np
 import os
 import pandas as pd
+from scipy.signal import savgol_filter
 
 from models import logistic_regression, xgboost
 
@@ -194,33 +196,37 @@ def hhh_prob_for_fixed_length_shot_sequences(df, max_shot_memory, verbose=False,
     
     return probabilities
 
-def dahhh_prob_given_diff_adj_shot_metrics(df, metric, max_shot_memory, verbose=False, plot=False, plot_with_line=True):
+def dahhh_prob_given_diff_adj_shot_metrics(df, metric, max_shot_memory, verbose=False, plot=False):
     probabilities = []
 
     # metric = "DSS" or "DPTS"
     for n in range(1, max_shot_memory+1):
-        in_features = [f"{metric}-{n}"]
+        metric_col = f"{metric}-{n}"
+        in_features = [metric_col]
         df_sub = df.dropna(subset=in_features)
 
-        # TODO: Include multiple models and determine which has best accuracy. Use that model to predict probabilities
         xgb_clf = xgboost(df_sub, in_features, out_features=["FGM"], verbose=verbose)
         
         max_metric_value = (1 if metric == "DSS" else 3) * n + 0.01 # add extra 0.01 so we can include rightmost endpoint
+        max_metric_value = math.ceil(df[metric_col].max()) + 0.01
         metric_values = np.arange(0, max_metric_value, 0.1).reshape(-1, 1)
-        prob_make_given_dss = xgb_clf.predict_proba(metric_values)[:, 1]
-        probabilities.append(list(zip(metric_values, prob_make_given_dss)))
+        prob_make_given_metric = xgb_clf.predict_proba(metric_values)[:, 1]
+        probabilities.append(list(zip(metric_values, prob_make_given_metric)))
 
         if plot:
-            make_scatter_plot(
-                np.squeeze(metric_values),
-                [prob_make_given_dss],
-                line_graph=plot_with_line,
-                xlabel=metric,
-                ylabel="Probability",
-                title=f"P(Make shot n+1 | {metric} of prev n shots): n = {n}",
-                dir_name=f"plots\dahhh_{metric}",
-                file_name=f"prob_make_given_{metric}_of_prev_{n}_shots{'_line' if plot_with_line else ''}.png"
-            )
+            # Since probabilities are based on xgb_clf predictions, when plotting the probabilities,
+            # we need to plot both with and without lines to preserve consistency across plots
+            for plot_with_line in [False, True]:
+                make_scatter_plot(
+                    np.squeeze(metric_values),
+                    [savgol_filter(prob_make_given_metric, 7, 3)] if plot_with_line else [prob_make_given_metric],
+                    line_graph=plot_with_line,
+                    xlabel=metric,
+                    ylabel="Probability",
+                    title=f"P(Make shot n+1 | {metric} of prev n shots): n = {n}",
+                    dir_name=f"plots\dahhh_{metric}",
+                    file_name=f"prob_make_given_{metric}_of_prev_{n}_shots{'_line' if plot_with_line else ''}.png"
+                )
 
     return probabilities
 
@@ -269,6 +275,6 @@ if __name__ == '__main__':
         file_name="prob_make_given_n_straight_diff_adj.png"
     )
 
-    probabilities_dahhh_dss = dahhh_prob_given_diff_adj_shot_metrics(df, "DSS", max_shot_memory, plot=True, plot_with_line=False)
+    probabilities_dahhh_dss = dahhh_prob_given_diff_adj_shot_metrics(df, "DSS", max_shot_memory, plot=True)
 
-    probabilities_dahhh_dpts = dahhh_prob_given_diff_adj_shot_metrics(df, "DPTS", max_shot_memory, plot=True, plot_with_line=False)
+    probabilities_dahhh_dpts = dahhh_prob_given_diff_adj_shot_metrics(df, "DPTS", max_shot_memory, plot=True)
