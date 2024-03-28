@@ -38,20 +38,18 @@ def multi_pairwise_z_tests(probabilities, num_samples, alpha):
     
     return p_values, significance
 
-
-def run_pairwise_z_tests_k_of_n(df, max_shot_memory, verbose=False, dir_name=None, file_prefix=None):
-    probabilities_hhh_k_of_n, shot_sample_sizes_hhh_k_of_n = hhh_prob_for_fixed_num_prev_shots_made(df, max_shot_memory, plot=False)
-
+def run_pairwise_z_tests_k_of_n(probabilities, shot_sample_sizes, diff_adj=False, verbose=False, dir_name=None, file_prefix=None):
     alpha = 0.05
+    N = len(probabilities)
 
-    for n in range(max_shot_memory):
+    for n in range(N):
         num_tests = (n + 1) * (n + 2) // 2
 
-        p_values_n, significance_n = multi_pairwise_z_tests(probabilities_hhh_k_of_n[n], shot_sample_sizes_hhh_k_of_n[n], alpha)
+        p_values_n, significance_n = multi_pairwise_z_tests(probabilities[n], shot_sample_sizes[n], alpha)
         sig_indices = [(i, j) for i, row in enumerate(significance_n) for j, sig in enumerate(row) if sig]
         
         if verbose:
-            print(f"Assessing HHH for k made in last {n+1} shots: ", end='')
+            print(f"Assessing {'DA' if diff_adj else ''}HHH for k made in last {n+1} shots: ", end='')
             if sig_indices:
                 print(f"k-values for which probability difference is significant: {sig_indices}")
             else:
@@ -63,7 +61,7 @@ def run_pairwise_z_tests_k_of_n(df, max_shot_memory, verbose=False, dir_name=Non
             width = 7 # spaces for text width
 
             with open(f"{dir_name}\{file_prefix}_n={n+1}.txt", "w") as file:
-                file.write(f"Table of pairwise p-values for conditional prob differences between i,j makes in last {n+1} shots\n")
+                file.write(f"Table of pairwise p-values for conditional prob differences between i,j makes in last {n+1} shots ({'' if diff_adj else 'NOT '}adjusting for difficulty)\n")
                 file.write(f"Using Bonferroni-corrected alpha value of {round(alpha / num_tests, 5)}\n\n")
                 file.write("i,j".center(width) + " ")
                 file.write(" ".join([str(x).center(width) for x in range(n+2)]))
@@ -82,4 +80,23 @@ if __name__ == '__main__':
     df = pd.read_csv("data\shot_result_dataset.csv")
     max_shot_memory = 10
 
-    run_pairwise_z_tests_k_of_n(df, max_shot_memory, verbose=True, dir_name="results\hhh_k_of_n", file_prefix="p_value_table")
+    probabilities_hhh_k_of_n, shot_sample_sizes_hhh_k_of_n = hhh_prob_for_fixed_num_prev_shots_made(df, max_shot_memory, plot=False)
+    run_pairwise_z_tests_k_of_n(
+        probabilities_hhh_k_of_n, shot_sample_sizes_hhh_k_of_n, 
+        diff_adj=False, verbose=True, 
+        dir_name="results\hhh_k_of_n", file_prefix="p_value_table"
+    )
+
+    probabilities_dahhh_k_of_n_d_gt_d_avg, shot_sample_sizes_dahhh_k_of_n_d_gt_d_avg = hhh_prob_for_fixed_num_prev_shots_made(df, max_shot_memory, diff_adj="greater", plot=True)
+    run_pairwise_z_tests_k_of_n(
+        probabilities_dahhh_k_of_n_d_gt_d_avg, shot_sample_sizes_dahhh_k_of_n_d_gt_d_avg, 
+        diff_adj=True, verbose=True, 
+        dir_name="results\dahhh_k_of_n\gt", file_prefix="p_value_table"
+    )
+
+    probabilities_dahhh_k_of_n_d_lt_d_avg, shot_sample_sizes_dahhh_k_of_n_d_lt_d_avg = hhh_prob_for_fixed_num_prev_shots_made(df, max_shot_memory, diff_adj="less", plot=True)
+    run_pairwise_z_tests_k_of_n(
+        probabilities_dahhh_k_of_n_d_lt_d_avg, shot_sample_sizes_dahhh_k_of_n_d_lt_d_avg, 
+        diff_adj=True, verbose=True, 
+        dir_name="results\dahhh_k_of_n\lt", file_prefix="p_value_table"
+    )

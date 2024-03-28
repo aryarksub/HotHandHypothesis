@@ -1,4 +1,4 @@
-Table of pairwise p-values for conditional prob differences between i,j makes in last 1 shots (NOT adjusting for difficulty)
+Table of pairwise p-values for conditional prob differences between i,j makes in last 1 shots (adjusting for difficulty)
 Using Bonferroni-corrected alpha value of 0.05
 
   i,j      0       1   
