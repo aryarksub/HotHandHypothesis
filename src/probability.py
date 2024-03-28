@@ -65,7 +65,9 @@ def get_prob_make_given_num_shots_made(df, num_prev_shots, min_num_shots_made, m
     else:
         df_diff_adj = df
     df_sub = df_diff_adj.loc[df_diff_adj[f"TOT_FGM-{num_prev_shots}"].between(min_num_shots_made, max_num_shots_made, inclusive='both')]
-    return df_sub["FGM"].sum() / len(df_sub)
+
+    # Return probability and number of total shots with given property
+    return df_sub["FGM"].sum() / len(df_sub), len(df_sub)
 
 def get_prob_make_given_result_sequence(df, num_prev_shots, sequence):
     # Prepend "X" to stay consistent with data format in shot_result_dataset.csv
@@ -80,14 +82,17 @@ def hhh_prob_for_fixed_num_prev_shots_made(df, max_shot_memory, diff_adj="", ver
     plot_file_name_suffix = (f"_d_{'gt' if diff_adj == 'greater' else 'lt'}") if diff_adj else ""
 
     probabilities = []
+    shot_sample_sizes = []
     
     # Probability of making a shot given k makes in last n shots (1 <= n <= 10, 0 <= k <= n)
     for n in range(1, max_shot_memory+1):
         prob_for_n_shots = []
+        shot_sample_sizes_n = []
         
         for k in range(n+1):
-            prob_make_with_k_makes_in_last_n_shots = get_prob_make_given_num_shots_made(df, n, k, k, diff_adj=diff_adj)
+            prob_make_with_k_makes_in_last_n_shots, shot_sample_size = get_prob_make_given_num_shots_made(df, n, k, k, diff_adj=diff_adj)
             prob_for_n_shots.append(prob_make_with_k_makes_in_last_n_shots)
+            shot_sample_sizes_n.append(shot_sample_size)
             
             if verbose:
                 print(
@@ -107,8 +112,9 @@ def hhh_prob_for_fixed_num_prev_shots_made(df, max_shot_memory, diff_adj="", ver
             )
         
         probabilities.append(prob_for_n_shots)
+        shot_sample_sizes.append(shot_sample_sizes_n)
     
-    return probabilities
+    return probabilities, shot_sample_sizes
 
 def hhh_prob_for_made_shot_streak(df, max_shot_memory, diff_adj="", verbose=False, plot=False):
     # Set description/plot names to indicate whether prob is calculated using shots above/below prev shot avg difficulty
@@ -118,14 +124,18 @@ def hhh_prob_for_made_shot_streak(df, max_shot_memory, diff_adj="", verbose=Fals
     
     probs_n_straight = []
     probs_one_miss = []
+    shot_sample_sizes_n_straight = []
+    shot_sample_sizes_one_miss = []
 
     for n in range(1, max_shot_memory+1):
         # Probability of making a shot given n makes in last n shots (1 <= n <= 10)
-        prob_make_with_n_cons_prev_makes = get_prob_make_given_num_shots_made(df, n, n, n, diff_adj=diff_adj)
+        prob_make_with_n_cons_prev_makes, shot_sample_size_n_makes = get_prob_make_given_num_shots_made(df, n, n, n, diff_adj=diff_adj)
         # Probability of making a shot given at least 1 miss in last n shots (1 <= n <= 10)
-        prob_make_with_at_least_one_prev_miss = get_prob_make_given_num_shots_made(df, n, 0, n-1, diff_adj=diff_adj)
+        prob_make_with_at_least_one_prev_miss, shot_sample_size_one_miss = get_prob_make_given_num_shots_made(df, n, 0, n-1, diff_adj=diff_adj)
         probs_n_straight.append(prob_make_with_n_cons_prev_makes)
         probs_one_miss.append(prob_make_with_at_least_one_prev_miss)
+        shot_sample_sizes_n_straight.append(shot_sample_size_n_makes)
+        shot_sample_sizes_one_miss.append(shot_sample_size_one_miss)
 
         if verbose:
             print(
@@ -149,7 +159,7 @@ def hhh_prob_for_made_shot_streak(df, max_shot_memory, diff_adj="", verbose=Fals
             file_name=f"prob_make_given_n_straight{plot_file_name_suffix}.png" 
         )
 
-    return probs_n_straight, probs_one_miss
+    return probs_n_straight, probs_one_miss, shot_sample_sizes_n_straight, shot_sample_sizes_one_miss
 
 def hhh_prob_for_fixed_length_shot_sequences(df, max_shot_memory, verbose=False, plot=False):
     probabilities = []
@@ -234,15 +244,15 @@ if __name__ == '__main__':
     df = pd.read_csv("data\shot_result_dataset.csv")
     max_shot_memory = 10
 
-    probabilities_hhh_k_of_n = hhh_prob_for_fixed_num_prev_shots_made(df, max_shot_memory, plot=True)
+    probabilities_hhh_k_of_n, shot_sample_sizes_hhh_k_of_n = hhh_prob_for_fixed_num_prev_shots_made(df, max_shot_memory, plot=True)
 
-    probabilities_hhh_n_straight, probabilities_hhh_one_prev_miss = hhh_prob_for_made_shot_streak(df, max_shot_memory, plot=True)
+    probabilities_hhh_n_straight, probabilities_hhh_one_prev_miss, shot_sample_sizes_hhh_n_straight, shot_sample_sizes_hhh_one_prev_miss = hhh_prob_for_made_shot_streak(df, max_shot_memory, plot=True)
 
     probabilities_hhh_length_n_sequence = hhh_prob_for_fixed_length_shot_sequences(df, max_shot_memory, plot=True)
 
-    probabilities_dahhh_k_of_n_d_gt_d_avg = hhh_prob_for_fixed_num_prev_shots_made(df, max_shot_memory, diff_adj="greater", plot=True)
+    probabilities_dahhh_k_of_n_d_gt_d_avg, shot_sample_sizes_dahhh_k_of_n_d_gt_d_avg = hhh_prob_for_fixed_num_prev_shots_made(df, max_shot_memory, diff_adj="greater", plot=True)
 
-    probabilities_dahhh_k_of_n_d_lt_d_avg = hhh_prob_for_fixed_num_prev_shots_made(df, max_shot_memory, diff_adj="less", plot=True)
+    probabilities_dahhh_k_of_n_d_lt_d_avg, shot_sample_sizes_dahhh_k_of_n_d_lt_d_avg = hhh_prob_for_fixed_num_prev_shots_made(df, max_shot_memory, diff_adj="less", plot=True)
 
     for n in range(1, max_shot_memory+1):
         probs_gt, probs_lt = probabilities_dahhh_k_of_n_d_gt_d_avg[n-1], probabilities_dahhh_k_of_n_d_lt_d_avg[n-1]
@@ -257,9 +267,9 @@ if __name__ == '__main__':
             file_name=f"prob_make_given_k_out_of_{n}_shots_diff_adj.png"
         )
 
-    probabilities_dahhh_n_straight_d_gt, probabilities_dahhh_one_prev_miss_d_gt = hhh_prob_for_made_shot_streak(df, max_shot_memory, diff_adj="greater", plot=True)
+    probabilities_dahhh_n_straight_d_gt, probabilities_dahhh_one_prev_miss_d_gt, shot_sample_sizes_dahhh_n_straight_d_gt, shot_sample_sizes_dahhh_one_prev_miss_d_gt = hhh_prob_for_made_shot_streak(df, max_shot_memory, diff_adj="greater", plot=True)
 
-    probabilities_dahhh_n_straight_d_lt, probabilities_dahhh_one_prev_miss_d_lt = hhh_prob_for_made_shot_streak(df, max_shot_memory, diff_adj="less", plot=True)
+    probabilities_dahhh_n_straight_d_lt, probabilities_dahhh_one_prev_miss_d_lt, shot_sample_sizes_dahhh_n_straight_d_lt, shot_sample_sizes_dahhh_one_prev_miss_d_lt = hhh_prob_for_made_shot_streak(df, max_shot_memory, diff_adj="less", plot=True)
 
     make_scatter_plot(
         range(1, max_shot_memory+1),
