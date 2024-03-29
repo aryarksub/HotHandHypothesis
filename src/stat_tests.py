@@ -38,6 +38,24 @@ def multi_pairwise_z_tests(probabilities, num_samples, alpha):
     
     return p_values, significance
 
+def make_result_file_for_2d_table(dir_name, file_name, i_range, j_range, data, header_text="", footer_text="", text_space=7):
+    os.makedirs(dir_name, exist_ok=True)
+
+    with open(f"{dir_name}\{file_name}", "w") as file:
+        file.write(header_text)
+
+        file.write("i,j".center(text_space) + " ")
+        file.write(" ".join([str(x).center(text_space) for x in j_range]))
+        file.write("\n")
+
+        for i in range(len(i_range)):
+            k = i_range[i]
+            file.write(str(k).center(text_space) + " ")
+            file.write(" ".join([str(round(p, 5)).center(text_space) if p else 'X'.center(text_space) for p in data[i]]))
+            file.write("\n")
+
+        file.write(footer_text)
+
 def run_pairwise_z_tests_k_of_n(probabilities, shot_sample_sizes, diff_adj=False, verbose=False, dir_name=None, file_prefix=None):
     alpha = 0.05
     N = len(probabilities)
@@ -56,24 +74,15 @@ def run_pairwise_z_tests_k_of_n(probabilities, shot_sample_sizes, diff_adj=False
                 print("There is no pair of k-values for which the probability difference is significant")
 
         if dir_name and file_prefix:
-            os.makedirs(dir_name, exist_ok=True)
-
-            width = 7 # spaces for text width
-
-            with open(f"{dir_name}\{file_prefix}_n={n+1}.txt", "w") as file:
-                file.write(f"Table of pairwise p-values for conditional prob differences between i,j makes in last {n+1} shots ({'' if diff_adj else 'NOT '}adjusting for difficulty)\n")
-                file.write(f"Using Bonferroni-corrected alpha value of {round(alpha / num_tests, 5)}\n\n")
-                file.write("i,j".center(width) + " ")
-                file.write(" ".join([str(x).center(width) for x in range(n+2)]))
-                file.write("\n")
-                for k in range(n+2):
-                    file.write(str(k).center(width) + " ")
-                    file.write(" ".join([str(round(p, 5)).center(width) if p else 'X'.center(width) for p in p_values_n[k]]))
-                    file.write("\n")
-                if sig_indices:
-                    file.write(f"\nk-values for which probability difference is significant: {sig_indices}\n")
-                else:
-                    file.write("\nThere is no pair of k-values for which the probability difference is significant\n")
+            header = f"Table of pairwise p-values for conditional prob differences between i,j makes in last {n+1} shots ({'' if diff_adj else 'NOT '}adjusting for difficulty)\n" + \
+            f"Using Bonferroni-corrected alpha value of {round(alpha / num_tests, 5)}\n\n"
+            footer = f"\nk-values for which probability difference is significant: {sig_indices}\n" if sig_indices else \
+            "\nThere is no pair of k-values for which the probability difference is significant\n"
+            make_result_file_for_2d_table(
+                dir_name, f"{file_prefix}_n={n+1}.txt",
+                range(n+2), range(n+2), p_values_n,
+                header_text=header, footer_text=footer, text_space=7
+            )
 
 def run_pairwise_z_tests_n_straight(probabilities, shot_sample_sizes, verbose=False, dir_name=None, file_prefix=None):
     alpha = 0.05
@@ -91,24 +100,15 @@ def run_pairwise_z_tests_n_straight(probabilities, shot_sample_sizes, verbose=Fa
             print("There is no pair of n-values for which the probability difference is significant")
 
     if dir_name and file_prefix:
-        os.makedirs(dir_name, exist_ok=True)
-
-        width = 7 # spaces for text width
-
-        with open(f"{dir_name}\{file_prefix}.txt", "w") as file:
-            file.write(f"Table of pairwise p-values for conditional prob differences between streaks of previous i,j made shots\n")
-            file.write(f"Using Bonferroni-corrected alpha value of {round(alpha / num_tests, 5)}\n\n")
-            file.write("i,j".center(width) + " ")
-            file.write(" ".join([str(x).center(width) for x in range(1, N+1)]))
-            file.write("\n")
-            for k in range(N):
-                file.write(str(k+1).center(width) + " ")
-                file.write(" ".join([str(round(p, 5)).center(width) if p else 'X'.center(width) for p in p_values[k]]))
-                file.write("\n")
-            if shot_pairs_with_sig:
-                file.write(f"\nn-values for which probability difference is significant: {shot_pairs_with_sig}\n")
-            else:
-                file.write("\nThere is no pair of n-values for which the probability difference is significant\n")
+        header = f"Table of pairwise p-values for conditional prob differences between streaks of previous i,j made shots\n" + \
+        f"Using Bonferroni-corrected alpha value of {round(alpha / num_tests, 5)}\n\n"
+        footer = f"\nn-values for which probability difference is significant: {shot_pairs_with_sig}\n" if shot_pairs_with_sig else \
+        "\nThere is no pair of n-values for which the probability difference is significant\n"
+        make_result_file_for_2d_table(
+            dir_name, f"{file_prefix}.txt",
+            range(1, N+1), range(1, N+1), p_values,
+            header_text=header, footer_text=footer, text_space=7
+        )
 
 if __name__ == '__main__':
     df = pd.read_csv("data\shot_result_dataset.csv")
