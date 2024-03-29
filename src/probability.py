@@ -4,6 +4,7 @@ import numpy as np
 import os
 import pandas as pd
 from scipy.signal import savgol_filter
+from collections import defaultdict
 
 from models import logistic_regression, xgboost
 
@@ -56,18 +57,51 @@ def generate_shot_sequences(N):
 
     return [to_padded_binary(sequence) for k in range(N+1) for sequence in dp[N][k]]
 
-def get_prob_make_given_num_shots_made(df, num_prev_shots, min_num_shots_made, max_num_shots_made, diff_adj=""):
+def get_prob_make_given_num_shots_made(df, num_prev_shots, min_num_shots_made, max_num_shots_made, diff_adj="", player=""):
+    if player:
+        df_player = df.loc[df["PLAYER_NAME"] == player]
+    else:
+        df_player = df
+
     # If diff_adj != "", get sub-dataframe based on shots with difficulty above/below prev shot avg difficulty
     if diff_adj == "greater":
-        df_diff_adj = df.loc[df["SHOT_DIFFICULTY"] >= df[f"D_AVG-{num_prev_shots}"]]
+        df_diff_adj = df_player.loc[df_player["SHOT_DIFFICULTY"] >= df_player[f"D_AVG-{num_prev_shots}"]]
     elif diff_adj == "lower":
-        df_diff_adj = df.loc[df["SHOT_DIFFICULTY"] < df[f"D_AVG-{num_prev_shots}"]]
+        df_diff_adj = df_player.loc[df_player["SHOT_DIFFICULTY"] < df_player[f"D_AVG-{num_prev_shots}"]]
     else:
-        df_diff_adj = df
+        df_diff_adj = df_player
     df_sub = df_diff_adj.loc[df_diff_adj[f"TOT_FGM-{num_prev_shots}"].between(min_num_shots_made, max_num_shots_made, inclusive='both')]
 
     # Return probability and number of total shots with given property
-    return df_sub["FGM"].sum() / len(df_sub), len(df_sub)
+    return (df_sub["FGM"].sum() / len(df_sub), len(df_sub)) if len(df_sub) != 0 else (None, 0)
+
+def get_fg_and_prob_given_num_shots_made_by_player(df, max_shot_memory, diff_adj=""):
+    # metrics[n][k] holds a dictionary with keys = player names, values = (prob, fgm, fga)
+    # where probabilities are conditioned on making k of the previous n shots
+    # If a player has no data, they are not included in the dictionary at index (n,k)
+    metrics = [[defaultdict() for k in range(max_shot_memory+1)] for n in range(max_shot_memory+1)]
+
+    all_players = df["PLAYER_NAME"].unique()
+
+    for player in all_players:
+        df_player = df.loc[df["PLAYER_NAME"] == player]
+        for n in range(1, max_shot_memory+1):
+            if diff_adj == "greater":
+                df_diff_adj = df_player.loc[df_player["SHOT_DIFFICULTY"] >= df_player[f"D_AVG-{n}"]]
+            elif diff_adj == "lower":
+                df_diff_adj = df_player.loc[df_player["SHOT_DIFFICULTY"] < df_player[f"D_AVG-{n}"]]
+            else:
+                df_diff_adj = df_player
+
+            for k in range(n+1):
+                df_sub = df_diff_adj.loc[df_diff_adj[f"TOT_FGM-{n}"] == k]
+                fgm, fga = df_sub["FGM"].sum(), len(df_sub)
+                if fga != 0:
+                    metrics[n][k][player] = (fgm / fga, fgm, fga)
+
+    return metrics
+
+
 
 def get_prob_make_given_result_sequence(df, num_prev_shots, sequence):
     # Prepend "X" to stay consistent with data format in shot_result_dataset.csv
