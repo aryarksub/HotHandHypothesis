@@ -1,7 +1,8 @@
 import pandas as pd
 import os
 from statsmodels.stats.proportion import proportions_ztest
-from probability import hhh_prob_for_fixed_num_prev_shots_made, hhh_prob_for_made_shot_streak
+from scipy.stats import mannwhitneyu
+from probability import hhh_prob_for_fixed_num_prev_shots_made, hhh_prob_for_made_shot_streak, get_fg_and_prob_given_num_shots_made_by_player
 
 def multi_pairwise_z_tests(probabilities, num_samples, alpha):
     # Treat probabilities as proportions for multiple z-tests using Bonferroni correction
@@ -36,6 +37,36 @@ def multi_pairwise_z_tests(probabilities, num_samples, alpha):
         p_values.append(p_values_n1)
         significance.append(significance_n1)
     
+    return p_values, significance
+
+def multi_pairwise_mann_whitney_tests(probabilities, alpha, bonf_corr=False):
+    N = len(probabilities)
+    num_tests = N * (N - 1) // 2
+    alpha_adjusted = alpha / (num_tests if bonf_corr else 1) # Bonferroni correction
+
+    p_values = []
+    significance = []
+
+    for n1 in range(N):
+        probs_n1 = probabilities[n1]
+
+        p_values_n1 = [None] * N
+        significance_n1 = [None] * N
+
+        for n2 in range(n1 + 1, N):
+            probs_n2 = probabilities[n2]
+
+            if len(probs_n1) == 0 or len(probs_n2) == 0:
+                p_values_n1[n2] = None
+                significance_n1[n2] = None
+            else:
+                statistic, p_value = mannwhitneyu(probs_n1, probs_n2)
+                p_values_n1[n2] = p_value
+                significance_n1[n2] = (p_value < alpha_adjusted)
+
+        p_values.append(p_values_n1)
+        significance.append(significance_n1)
+
     return p_values, significance
 
 def make_result_file_for_2d_table(dir_name, file_name, i_range, j_range, data, header_text="", footer_text="", text_space=7):
@@ -110,6 +141,48 @@ def run_pairwise_z_tests_n_straight(probabilities, shot_sample_sizes, verbose=Fa
             header_text=header, footer_text=footer, text_space=7
         )
 
+def run_pairwise_mann_whitney_tests_k_of_n(probabilities, diff_adj=False, verbose=False, dir_name=None, file_prefix=None):
+    alpha = 0.05
+    N = len(probabilities)
+
+    for n in range(N):
+        num_tests = (n + 1) * (n + 2) // 2
+
+        p_values_n, significance_n = multi_pairwise_mann_whitney_tests(probabilities[n], alpha, bonf_corr=True)
+        sig_indices = [(i, j) for i, row in enumerate(significance_n) for j, sig in enumerate(row) if sig]
+
+        if verbose:
+            print(f"Assessing {'DA' if diff_adj else ''}HHH for k made in last {n+1} shots: ", end='')
+            if sig_indices:
+                print(f"k-values for which probability difference is significant: {sig_indices}")
+            else:
+                print("There is no pair of k-values for which the probability difference is significant")
+
+        if dir_name and file_prefix:
+            header = f"Table of pairwise p-values for conditional prob differences between i,j makes in last {n+1} shots ({'' if diff_adj else 'NOT '}adjusting for difficulty)\n" + \
+            f"Using Bonferroni-corrected alpha value of {round(alpha / num_tests, 5)} and Mann-Whitney U test\n\n"
+            footer = f"\nk-values for which probability difference is significant: {sig_indices}\n" if sig_indices else \
+            "\nThere is no pair of k-values for which the probability difference is significant\n"
+            make_result_file_for_2d_table(
+                dir_name, f"{file_prefix}_n={n+1}.txt",
+                range(n+2), range(n+2), p_values_n,
+                header_text=header, footer_text=footer, text_space=7
+            )
+
+def get_probabilities_from_player_metrics_k_of_n(metrics, n):
+    probabilities = []
+    for n in range(1, n + 1):
+        probabilities_n = []
+
+        for k in range(n + 1):
+            metric_dict = metrics[n][k]
+            probabilities_n_k = [metric_dict[player][0] for player in metric_dict]
+            probabilities_n.append(probabilities_n_k)
+
+        probabilities.append(probabilities_n)
+
+    return probabilities
+
 if __name__ == '__main__':
     df = pd.read_csv("data\shot_result_dataset.csv")
     max_shot_memory = 10
@@ -119,6 +192,14 @@ if __name__ == '__main__':
         probabilities_hhh_k_of_n, shot_sample_sizes_hhh_k_of_n, 
         diff_adj=False, verbose=False, 
         dir_name="results\hhh_k_of_n", file_prefix="p_value_table"
+    )
+
+    metrics_hhh_k_of_n = get_fg_and_prob_given_num_shots_made_by_player(df, max_shot_memory, diff_adj="")
+    player_probs_hhh_k_of_n = get_probabilities_from_player_metrics_k_of_n(metrics_hhh_k_of_n, max_shot_memory)
+    run_pairwise_mann_whitney_tests_k_of_n(
+        player_probs_hhh_k_of_n,
+        diff_adj=False, verbose=False,
+        dir_name="results\hhh_k_of_n\mann_whitney", file_prefix="p_value_table"
     )
 
     probabilities_hhh_n_straight, probabilities_hhh_one_prev_miss, shot_sample_sizes_hhh_n_straight, shot_sample_sizes_hhh_one_prev_miss = hhh_prob_for_made_shot_streak(df, max_shot_memory, plot=True)

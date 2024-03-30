@@ -1,0 +1,16 @@
+Table of pairwise p-values for conditional prob differences between i,j makes in last 9 shots (NOT adjusting for difficulty)
+Using Bonferroni-corrected alpha value of 0.00111 and Mann-Whitney U test
+
+  i,j      0       1       2       3       4       5       6       7       8       9   
+   0       X    0.60031 0.46174  0.3442 0.38788  0.1844 0.13657 0.15363 0.01686 0.53319
+   1       X       X    0.53847 0.28627 0.44856 0.06865 0.05391 0.07447 0.00588 0.86972
+   2       X       X       X    0.51184 0.91373 0.12651 0.07393 0.11661 0.00468 0.90592
+   3       X       X       X       X    0.39193 0.38903 0.21361 0.27247 0.01017 0.77079
+   4       X       X       X       X       X    0.07979 0.05667 0.12396 0.00669 0.80539
+   5       X       X       X       X       X       X    0.66763 0.69254 0.03417 0.61258
+   6       X       X       X       X       X       X       X    0.99531  0.0733 0.62383
+   7       X       X       X       X       X       X       X       X    0.08763  0.7022
+   8       X       X       X       X       X       X       X       X       X     0.4133
+   9       X       X       X       X       X       X       X       X       X       X   
+
+There is no pair of k-values for which the probability difference is significant
