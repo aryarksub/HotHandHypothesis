@@ -191,7 +191,7 @@ if __name__ == '__main__':
     run_pairwise_z_tests_k_of_n(
         probabilities_hhh_k_of_n, shot_sample_sizes_hhh_k_of_n, 
         diff_adj=False, verbose=False, 
-        dir_name="results\hhh_k_of_n", file_prefix="p_value_table"
+        dir_name="results\hhh_k_of_n\prop_z", file_prefix="p_value_table"
     )
 
     metrics_hhh_k_of_n = get_fg_and_prob_given_num_shots_made_by_player(df, max_shot_memory, diff_adj="")
@@ -206,19 +206,19 @@ if __name__ == '__main__':
     run_pairwise_z_tests_n_straight(
         probabilities_hhh_n_straight, shot_sample_sizes_hhh_n_straight,
         verbose=False,
-        dir_name="results\hhh_n_straight", file_prefix="p_value_table"
+        dir_name="results\hhh_n_straight\prop_z", file_prefix="p_value_table"
     )
 
     probabilities_dahhh_k_of_n_d_gt_d_avg, shot_sample_sizes_dahhh_k_of_n_d_gt_d_avg = hhh_prob_for_fixed_num_prev_shots_made(df, max_shot_memory, diff_adj="greater", plot=True)
     run_pairwise_z_tests_k_of_n(
         probabilities_dahhh_k_of_n_d_gt_d_avg, shot_sample_sizes_dahhh_k_of_n_d_gt_d_avg, 
         diff_adj=True, verbose=False, 
-        dir_name="results\dahhh_k_of_n\gt", file_prefix="p_value_table"
+        dir_name="results\dahhh_k_of_n\gt\prop_z", file_prefix="p_value_table"
     )
 
     probabilities_dahhh_k_of_n_d_lt_d_avg, shot_sample_sizes_dahhh_k_of_n_d_lt_d_avg = hhh_prob_for_fixed_num_prev_shots_made(df, max_shot_memory, diff_adj="less", plot=True)
     run_pairwise_z_tests_k_of_n(
         probabilities_dahhh_k_of_n_d_lt_d_avg, shot_sample_sizes_dahhh_k_of_n_d_lt_d_avg, 
         diff_adj=True, verbose=False, 
-        dir_name="results\dahhh_k_of_n\lt", file_prefix="p_value_table"
+        dir_name="results\dahhh_k_of_n\lt\prop_z", file_prefix="p_value_table"
     )
