@@ -1,0 +1,12 @@
+Results of Augmented Dickey-Fuller tests run on DAHHH using DPTS metric using last n shots
+
+n = 1  : 0.60703	NOT STATIONARY
+n = 2  : 0.99305	NOT STATIONARY
+n = 3  : 0.94491	NOT STATIONARY
+n = 4  : 0.93799	NOT STATIONARY
+n = 5  : 0.00033	STATIONARY
+n = 6  : 0.49953	NOT STATIONARY
+n = 7  : 0.79871	NOT STATIONARY
+n = 8  : 0.45386	NOT STATIONARY
+n = 9  : 0.08208	NOT STATIONARY
+n = 10 : 0.02853	STATIONARY

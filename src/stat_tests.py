@@ -2,12 +2,13 @@ import pandas as pd
 import os
 from statsmodels.stats.proportion import proportions_ztest
 from scipy.stats import mannwhitneyu
-from probability import hhh_prob_for_fixed_num_prev_shots_made, hhh_prob_for_made_shot_streak, get_fg_and_prob_given_num_shots_made_by_player
+from probability import hhh_prob_for_fixed_num_prev_shots_made, hhh_prob_for_made_shot_streak, get_fg_and_prob_given_num_shots_made_by_player, dahhh_prob_given_diff_adj_shot_metrics
+from statsmodels.tsa.stattools import adfuller
 
 def multi_pairwise_z_tests(probabilities, num_samples, alpha):
     # Treat probabilities as proportions for multiple z-tests using Bonferroni correction
-    # For each pair of probabilities, run a z-test for the hypothesis that the difference
-    # in probabilities is zero (i.e. the probabilities are equal)
+    # For each pair of probabilities, run a two-proportion z-test for the hypothesis that 
+    # the difference in probabilities is zero (i.e. the probabilities/proportions are equal)
 
     N = len(probabilities)
     num_tests = N * (N - 1) // 2
@@ -66,6 +67,28 @@ def multi_pairwise_mann_whitney_tests(probabilities, alpha, bonf_corr=False):
 
         p_values.append(p_values_n1)
         significance.append(significance_n1)
+
+    return p_values, significance
+
+def multi_augmented_dickey_fuller_tests(probabilities, alpha, metric, verbose=False):
+    # probabilities holds N lists, each of which correspond to probability of having certain metric in last n shots
+    # Run ADF tests on each of these lists and return p-values and significance/no significance
+    # Significance (p-value < alpha) indicates stationarity (no change in statistical properties over increasing metric)
+    N = len(probabilities)
+    p_values = []
+    significance = []
+
+    for n in range(N):
+        prob_list_n = probabilities[n]
+        adf_test_result = adfuller(prob_list_n)
+        p_value = adf_test_result[1]
+        sig = p_value < alpha
+        p_values.append(p_value)
+        significance.append(sig)
+
+        if verbose:
+            print(f'Assessing stationarity for DAHHH with {metric} metric using last {n+1} shots: ', end='')
+            print(f'p-value = {p_value}\t{"" if sig else "NOT "}STATIONARY')
 
     return p_values, significance
 
@@ -169,6 +192,27 @@ def run_pairwise_mann_whitney_tests_k_of_n(probabilities, diff_adj=False, verbos
                 header_text=header, footer_text=footer, text_space=7
             )
 
+def run_aug_dickey_fuller_tests(probabilities, metric, verbose=False, dir_name=None, file_prefix=None):
+    alpha = 0.05
+    N = len(probabilities)
+
+    clean_probs = [[tup[1] for tup in prob_list] for prob_list in probabilities]
+
+    p_values, significance = multi_augmented_dickey_fuller_tests(clean_probs, alpha, metric, verbose)
+    
+    if dir_name and file_prefix:
+        os.makedirs(dir_name, exist_ok=True)
+        text_space = 7
+
+        with open(f"{dir_name}\{file_prefix}", "w") as file:
+            file.write(f'Results of Augmented Dickey-Fuller tests run on DAHHH using {metric} metric using last n shots\n\n')
+
+            for n in range(N):
+                header = f"n = {n+1}".ljust(text_space) + ": "
+                p_val_str = str(round(p_values[n], 5)).ljust(text_space)
+                sig_str = ('' if significance[n] else 'NOT ') + 'STATIONARY'
+                file.write(f"{header}{p_val_str}\t{sig_str}\n")
+
 def get_probabilities_from_player_metrics_k_of_n(metrics, n):
     probabilities = []
     for n in range(1, n + 1):
@@ -202,23 +246,35 @@ if __name__ == '__main__':
         dir_name="results\hhh_k_of_n\mann_whitney", file_prefix="p_value_table"
     )
 
-    probabilities_hhh_n_straight, probabilities_hhh_one_prev_miss, shot_sample_sizes_hhh_n_straight, shot_sample_sizes_hhh_one_prev_miss = hhh_prob_for_made_shot_streak(df, max_shot_memory, plot=True)
+    probabilities_hhh_n_straight, probabilities_hhh_one_prev_miss, shot_sample_sizes_hhh_n_straight, shot_sample_sizes_hhh_one_prev_miss = hhh_prob_for_made_shot_streak(df, max_shot_memory, plot=False)
     run_pairwise_z_tests_n_straight(
         probabilities_hhh_n_straight, shot_sample_sizes_hhh_n_straight,
         verbose=False,
         dir_name="results\hhh_n_straight\prop_z", file_prefix="p_value_table"
     )
 
-    probabilities_dahhh_k_of_n_d_gt_d_avg, shot_sample_sizes_dahhh_k_of_n_d_gt_d_avg = hhh_prob_for_fixed_num_prev_shots_made(df, max_shot_memory, diff_adj="greater", plot=True)
+    probabilities_dahhh_k_of_n_d_gt_d_avg, shot_sample_sizes_dahhh_k_of_n_d_gt_d_avg = hhh_prob_for_fixed_num_prev_shots_made(df, max_shot_memory, diff_adj="greater", plot=False)
     run_pairwise_z_tests_k_of_n(
         probabilities_dahhh_k_of_n_d_gt_d_avg, shot_sample_sizes_dahhh_k_of_n_d_gt_d_avg, 
         diff_adj=True, verbose=False, 
         dir_name="results\dahhh_k_of_n\gt\prop_z", file_prefix="p_value_table"
     )
 
-    probabilities_dahhh_k_of_n_d_lt_d_avg, shot_sample_sizes_dahhh_k_of_n_d_lt_d_avg = hhh_prob_for_fixed_num_prev_shots_made(df, max_shot_memory, diff_adj="less", plot=True)
+    probabilities_dahhh_k_of_n_d_lt_d_avg, shot_sample_sizes_dahhh_k_of_n_d_lt_d_avg = hhh_prob_for_fixed_num_prev_shots_made(df, max_shot_memory, diff_adj="less", plot=False)
     run_pairwise_z_tests_k_of_n(
         probabilities_dahhh_k_of_n_d_lt_d_avg, shot_sample_sizes_dahhh_k_of_n_d_lt_d_avg, 
         diff_adj=True, verbose=False, 
         dir_name="results\dahhh_k_of_n\lt\prop_z", file_prefix="p_value_table"
+    )
+
+    probabilities_dahhh_dpts = dahhh_prob_given_diff_adj_shot_metrics(df, 'DPTS', max_shot_memory)
+    run_aug_dickey_fuller_tests(
+        probabilities_dahhh_dpts, 'DPTS', verbose=False, 
+        dir_name="results\dahhh_dpts", file_prefix="dpts_adf_p_vals.txt"
+    )
+
+    probabilities_dahhh_dss = dahhh_prob_given_diff_adj_shot_metrics(df, 'DSS', max_shot_memory)
+    run_aug_dickey_fuller_tests(
+        probabilities_dahhh_dss, 'DSS', verbose=True,
+        dir_name="results\dahhh_dss", file_prefix="dss_adf_p_vals.txt"
     )
