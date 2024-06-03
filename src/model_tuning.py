@@ -5,7 +5,7 @@ from data_processor import get_cleaned_shot_data
 
 def best_params_for_model(model, param_spaces, df, in_features, out_features):
     # See https://www.jmlr.org/papers/volume13/bergstra12a/bergstra12a.pdf for random search
-    opt_model = RandomizedSearchCV(model, param_spaces, n_iter=10, cv=5, verbose=3)
+    opt_model = RandomizedSearchCV(model, param_spaces, n_iter=50, cv=5, verbose=3)
     fit_model = opt_model.fit(df[in_features], df[out_features])
     return fit_model.best_params_, fit_model.best_score_
 
