@@ -141,7 +141,7 @@ def run_pairwise_z_tests_k_of_n(probabilities, shot_sample_sizes, diff_adj=False
 def run_pairwise_z_tests_n_straight(probabilities, shot_sample_sizes, verbose=False, dir_name=None, file_prefix=None):
     alpha = 0.05
     N = len(probabilities)
-    num_tests = (N + 1) * (N + 2) // 2
+    num_tests = (N) * (N - 1) // 2
 
     p_values, significance = multi_pairwise_z_tests(probabilities, shot_sample_sizes, alpha)
     shot_pairs_with_sig = [(i+1, j+1) for i, row in enumerate(significance) for j, sig in enumerate(row) if sig]

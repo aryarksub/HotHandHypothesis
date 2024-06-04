@@ -1,5 +1,5 @@
 Table of pairwise p-values for conditional prob differences between streaks of previous i,j made shots
-Using Bonferroni-corrected alpha value of 0.00076
+Using Bonferroni-corrected alpha value of 0.00111
 
   i,j      1       2       3       4       5       6       7       8       9       10  
    1       X    0.58427 0.26594 0.04693 0.29664 0.66998  0.1434 0.28553 0.08631 0.22514
