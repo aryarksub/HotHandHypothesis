@@ -2,12 +2,12 @@ Table of pairwise p-values for conditional prob differences between i,j makes in
 Using Bonferroni-corrected alpha value of 0.00238
 
   i,j      0       1       2       3       4       5       6   
-   0       X    0.29852 0.88651 0.82521  0.9229 0.90551 0.63894
-   1       X       X    0.05953 0.07704 0.05981 0.08027 0.89881
-   2       X       X       X    0.83771 0.91526 0.65896 0.65179
-   3       X       X       X       X    0.76537 0.56678 0.68553
-   4       X       X       X       X       X    0.72029 0.63376
-   5       X       X       X       X       X       X    0.55261
+   0       X    0.14926 0.44325  0.4126 0.46145 0.54724 0.31947
+   1       X       X    0.97024 0.96148  0.9701 0.95986  0.5506
+   2       X       X       X    0.41886 0.54237 0.67052 0.32589
+   3       X       X       X       X    0.61732 0.71661 0.34277
+   4       X       X       X       X       X    0.63985 0.31688
+   5       X       X       X       X       X       X    0.27631
    6       X       X       X       X       X       X       X   
 
 There is no pair of k-values for which the probability difference is significant

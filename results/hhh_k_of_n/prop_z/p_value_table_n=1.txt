@@ -2,7 +2,7 @@ Table of pairwise p-values for conditional prob differences between i,j makes in
 Using Bonferroni-corrected alpha value of 0.05
 
   i,j      0       1   
-   0       X    0.00037
+   0       X    0.99981
    1       X       X   
 
-k-values for which probability difference is significant: [(0, 1)]
+There is no pair of k-values for which the probability difference is significant

@@ -30,7 +30,7 @@ def multi_pairwise_z_tests(probabilities, num_samples, alpha):
 
             successes = [int(prob_n1 * sample_size_n1), int(prob_n2 * sample_size_n2)]
             trials = [sample_size_n1, sample_size_n2]
-            z_score, p_value = proportions_ztest(successes, trials)
+            z_score, p_value = proportions_ztest(successes, trials, alternative='smaller')
 
             p_values_n1[n2] = p_value
             significance_n1[n2] = (p_value < alpha_adjusted)
