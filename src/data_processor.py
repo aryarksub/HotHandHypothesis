@@ -90,8 +90,8 @@ def add_binned_data(df):
 
 def add_shot_difficulty(df):
     def construct_optimal_xgb_model(df, in_features, out_features):
-        extra_params = {'n_estimators': 104, 'reg_alpha': 0.5121225370235516, 'reg_lambda': 1.8195910691785828, 'subsample': 0.7}
-        opt_model = XGBClassifier(max_depth=3, max_leaves=10, learning_rate=0.14503807928342588, **extra_params)
+        extra_params = {'n_estimators': 101, 'reg_alpha': 0.5272865297827709, 'reg_lambda': 1.996232942987913, 'subsample': 0.6}
+        opt_model = XGBClassifier(max_depth=4, max_leaves=7, learning_rate=0.09713956898479065, **extra_params)
         fit_model = opt_model.fit(df[in_features], df[out_features])
         return fit_model
     
