@@ -1,0 +1,12 @@
+Results of Mann-Kendall tests run on DAHHH using DPTS metric using last n shots
+
+n = 1  : 0.10902	Trend: no trend
+n = 2  : 0.0    	Trend: decreasing
+n = 3  : 0.0    	Trend: decreasing
+n = 4  : 0.0    	Trend: decreasing
+n = 5  : 0.0    	Trend: decreasing
+n = 6  : 0.0    	Trend: decreasing
+n = 7  : 0.01347	Trend: decreasing
+n = 8  : 0.0    	Trend: decreasing
+n = 9  : 0.0    	Trend: decreasing
+n = 10 : 0.01647	Trend: decreasing

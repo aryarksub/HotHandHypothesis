@@ -4,6 +4,7 @@ from statsmodels.stats.proportion import proportions_ztest
 from scipy.stats import mannwhitneyu
 from probability import hhh_prob_for_fixed_num_prev_shots_made, hhh_prob_for_made_shot_streak, get_fg_and_prob_given_num_shots_made_by_player, dahhh_prob_given_diff_adj_shot_metrics
 from statsmodels.tsa.stattools import adfuller
+import pymannkendall as pmk
 
 def multi_pairwise_z_tests(probabilities, num_samples, alpha):
     # Treat probabilities as proportions for multiple z-tests using Bonferroni correction
@@ -91,6 +92,29 @@ def multi_augmented_dickey_fuller_tests(probabilities, alpha, metric, verbose=Fa
             print(f'p-value = {p_value}\t{"" if sig else "NOT "}STATIONARY')
 
     return p_values, significance
+
+def multi_mann_kendall_tests(probabilities, alpha, metric, verbose=False):
+    # probabilities holds N lists, each of which correspond to probability of having certain metric in last n shots
+    # Run ADF tests on each of these lists and return p-values and significance/no significance
+    # Significance (p-value < alpha) indicates stationarity (no change in statistical properties over increasing metric)
+    N = len(probabilities)
+    p_values = []
+    trends = []
+
+    for n in range(N):
+        prob_list_n = probabilities[n]
+        results = pmk.original_test(prob_list_n, alpha=alpha)
+        p_value = results.p
+        trend = results.trend
+        p_values.append(p_value)
+        trends.append(trend)
+
+        if verbose:
+            print(f'Assessing monotonicity for DAHHH with {metric} metric using last {n+1} shots: ', end='')
+            print(f'p-value = {p_value}\tTrend: {trend}')
+    
+    return p_values, trends
+
 
 def make_result_file_for_2d_table(dir_name, file_name, i_range, j_range, data, header_text="", footer_text="", text_space=7):
     os.makedirs(dir_name, exist_ok=True)
@@ -213,6 +237,27 @@ def run_aug_dickey_fuller_tests(probabilities, metric, verbose=False, dir_name=N
                 sig_str = ('' if significance[n] else 'NOT ') + 'STATIONARY'
                 file.write(f"{header}{p_val_str}\t{sig_str}\n")
 
+def run_mann_kendall_tests(probabilities, metric, verbose=False, dir_name=None, file_prefix=None):
+    alpha = 0.05
+    N = len(probabilities)
+
+    clean_probs = [[tup[1] for tup in prob_list] for prob_list in probabilities]
+    
+    p_values, trends = multi_mann_kendall_tests(clean_probs, alpha, metric, verbose)
+
+    if dir_name and file_prefix:
+        os.makedirs(dir_name, exist_ok=True)
+        text_space = 7
+
+        with open(f"{dir_name}\{file_prefix}", "w") as file:
+            file.write(f'Results of Mann-Kendall tests run on DAHHH using {metric} metric using last n shots\n\n')
+
+            for n in range(N):
+                header = f"n = {n+1}".ljust(text_space) + ": "
+                p_val_str = str(round(p_values[n], 5)).ljust(text_space)
+                trend_str = f'Trend: {trends[n]}'
+                file.write(f"{header}{p_val_str}\t{trend_str}\n")
+
 def get_probabilities_from_player_metrics_k_of_n(metrics, n):
     probabilities = []
     for n in range(1, n + 1):
@@ -273,8 +318,18 @@ if __name__ == '__main__':
         dir_name="results\dahhh_dpts", file_prefix="dpts_adf_p_vals.txt"
     )
 
+    run_mann_kendall_tests(
+        probabilities_dahhh_dpts, 'DPTS', verbose=False,
+        dir_name="results\dahhh_dpts", file_prefix="dpts_mk_p_vals.txt"
+    )
+
     probabilities_dahhh_dss = dahhh_prob_given_diff_adj_shot_metrics(df, 'DSS', max_shot_memory)
     run_aug_dickey_fuller_tests(
         probabilities_dahhh_dss, 'DSS', verbose=True,
         dir_name="results\dahhh_dss", file_prefix="dss_adf_p_vals.txt"
+    )
+    
+    run_mann_kendall_tests(
+        probabilities_dahhh_dss, 'DSS', verbose=False,
+        dir_name="results\dahhh_dss", file_prefix="dss_mk_p_vals.txt"
     )

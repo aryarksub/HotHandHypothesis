@@ -1,0 +1,12 @@
+Results of Mann-Kendall tests run on DAHHH using DSS metric using last n shots
+
+n = 1  : 1.0    	Trend: no trend
+n = 2  : 0.00016	Trend: decreasing
+n = 3  : 0.0    	Trend: decreasing
+n = 4  : 0.0    	Trend: decreasing
+n = 5  : 0.0    	Trend: decreasing
+n = 6  : 0.0    	Trend: decreasing
+n = 7  : 0.18447	Trend: no trend
+n = 8  : 0.0    	Trend: decreasing
+n = 9  : 0.08145	Trend: no trend
+n = 10 : 0.00048	Trend: decreasing
