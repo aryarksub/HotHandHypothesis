@@ -8,15 +8,17 @@ from collections import defaultdict
 
 from models import logistic_regression, xgboost
 
+markers = ['.', 'x', '+', 's', 'd']
+
 def make_scatter_plot(x, y_data, line_graph=False, remove_x_ticks=False, xlabel=None, ylabel=None, plot_labels=None, title=None, dir_name=None, file_name=None):
     if dir_name:
         os.makedirs(dir_name, exist_ok=True)
 
     for i in range(len(y_data)):
         if line_graph:
-            plt.plot(x, y_data[i], label=(plot_labels[i] if plot_labels else None))
+            plt.plot(x, y_data[i], label=(plot_labels[i] if plot_labels else None), color='black')
         else:
-            plt.scatter(x, y_data[i], label=(plot_labels[i] if plot_labels else None))
+            plt.scatter(x, y_data[i], label=(plot_labels[i] if plot_labels else None), marker=markers[i % len(markers)], color='black')
     
     if remove_x_ticks:
         plt.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
