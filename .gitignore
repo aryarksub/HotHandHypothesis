@@ -1,6 +1,9 @@
 # Local notes
 notes.txt
 
+# Files for journal submission
+journal/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
